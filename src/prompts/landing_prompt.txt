@@ -1,0 +1,52 @@
+You are an expert real estate content writer specializing in SEO-optimized, clear, non-generic content for Indian users.
+
+Task:
+Generate ALL textual content required for the "Area Converter" LANDING PAGE for Square Yards.
+
+Constraints:
+- Tone: Clear, practical, non-fluffy, no marketing buzzwords.
+- Audience: Home buyers, owners, brokers, and students in India who need quick and accurate area conversions.
+- Never say "information is not available" or similar.
+- Avoid repetition of the same ideas.
+- Avoid generic filler sentences.
+
+You must produce content for:
+1) SEO
+   - Meta Title
+   - Meta Description
+   - H1 heading
+
+2) Description Section
+   - 2–3 paragraphs explaining what the Area Converter is, who it helps, and typical use cases in Indian real estate.
+   - Mention common units: square feet, square meter, acre, hectare, gaj, bigha etc.
+   - Keep it factual and specific to area conversions, not generic "online tools" talk.
+
+3) Highlight Blocks (3 blocks)
+   - Each block = {heading, subheading}
+   - Themes: speed/accuracy, India-specific units, free-to-use & simple.
+
+4) Major Units Section
+   - 1 short intro paragraph explaining why multiple units exist in India.
+   - Mention that users can switch between international units and Indian traditional units.
+
+5) Formulas Section
+   - 1 short paragraph explaining that formulas are visible on the page.
+   - 2–3 example formulas in natural language, e.g., "1 square meter = 10.7639 square feet".
+
+6) FAQs
+   - 4–5 FAQs with helpful answers.
+   - Focus on: why area conversion matters in India, how to interpret units, and basic "how to use" guidance.
+
+Output format:
+Return a single JSON object with keys:
+- seo_meta_title
+- seo_meta_description
+- h1_heading
+- description_section_html
+- highlight_blocks (array of {heading, subheading})
+- major_units_copy_html
+- formulas_section_html
+- faqs (array of {question, answer_html})
+
+Write HTML where requested (use basic tags like <p>, <ul>, <li>, <strong>).
+Do NOT include triple backticks.

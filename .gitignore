@@ -1,0 +1,41 @@
+# Virtual env
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pkl
+
+# Env & secrets
+.env
+.env.*
+*.env
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Local artifacts
+previews/
+previews_full/
+*.sqlite3
+
+# MyPy / Pyright / coverage
+.mypy_cache/
+.pyright/
+.pytest_cache/
+.coverage
+htmlcov/
