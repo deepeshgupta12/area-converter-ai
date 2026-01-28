@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>{{ page.seo.metaTitle }}</title>
+  <meta name="description" content="{{ page.seo.metaDescription }}" />
+  <link rel="canonical" href="{{ page.seo.canonicalUrl }}" />
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; line-height: 1.45; }
+    .section { margin: 28px 0; }
+    .cards { display: flex; gap: 14px; flex-wrap: wrap; }
+    .card { border: 1px solid #ddd; border-radius: 10px; padding: 12px; width: 320px; }
+    .pill { display: inline-block; border: 1px solid #ddd; border-radius: 999px; padding: 6px 10px; margin: 4px 6px 0 0; }
+    .unit-row { border: 1px solid #eee; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #eee; padding: 10px; text-align: left; }
+    th { background: #fafafa; }
+  </style>
+</head>
+
+<body>
+
+  <header class="section">
+    <h1>{{ page.hero.h1 }}</h1>
+    <p>{{ page.hero.subheading2Liner }}</p>
+  </header>
+
+  <section class="section">
+    <h2>{{ page.whatIsAreaConverter.sectionTitle }}</h2>
+    <div>{{ page.whatIsAreaConverter.descriptionHtml | safe }}</div>
+
+    <div class="cards">
+      {% for c in page.whatIsAreaConverter.cards %}
+        <div class="card">
+          <h3>{{ c.title }}</h3>
+          <p>{{ c.description }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>All Units A–Z</h2>
+    {% for grp in page.allUnitsAZ %}
+      <div class="unit-row">
+        <h3>{{ grp.letter }}</h3>
+
+        {% for u in grp.units %}
+          <div style="margin: 14px 0;">
+            <strong>{{ u.unitName }}</strong>
+            {% if u.unitSymbol %}<span>({{ u.unitSymbol }})</span>{% endif %}
+            <div style="margin-top: 6px;">{{ u.oneLiner }}</div>
+            <div style="margin-top: 6px;"><em>{{ u.whereUsed }}</em></div>
+
+            <div style="margin-top: 8px;">
+              {% for p in u.pills %}
+                <span class="pill">{{ p.label }}</span>
+              {% endfor %}
+            </div>
+          </div>
+          <hr style="border:none;border-top:1px solid #eee;margin:12px 0;">
+        {% endfor %}
+      </div>
+    {% endfor %}
+  </section>
+
+  <!-- NEW: How Area Conversion Works -->
+  <section class="section">
+    <h2>{{ page.howAreaConversionWorks.sectionHeading }}</h2>
+    <div>{{ page.howAreaConversionWorks.descriptionHtml | safe }}</div>
+    <h3>Formula</h3>
+    <div>{{ page.howAreaConversionWorks.formulaHtml | safe }}</div>
+    <h3>Worked Example</h3>
+    <div>{{ page.howAreaConversionWorks.exampleHtml | safe }}</div>
+  </section>
+
+  <section class="section">
+    <h2>Major Area Units Explained</h2>
+    <div class="cards">
+      {% for u in page.majorUnitsExplained %}
+        <div class="card">
+          <h3>{{ u.unitName }} {% if u.unitSymbol %}({{ u.unitSymbol }}){% endif %}</h3>
+          <p>{{ u.oneLiner }}</p>
+          <p><strong>Conversion:</strong> {{ u.conversionLabel }}</p>
+          <p><em>{{ u.whereUsed }}</em></p>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Quick Conversion Reference</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>From</th>
+          <th>To</th>
+          <th>Factor</th>
+          <th>Region</th>
+          <th>Usage</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in page.quickConversionReference.rows %}
+          <tr>
+            <td>{{ r.fromUnitLabel }}</td>
+            <td>{{ r.toUnitLabel }}</td>
+            <td>{{ r.factor }}</td>
+            <td>{{ r.region }}</td>
+            <td>{{ r.usage }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="section">
+    <h2>FAQs</h2>
+    {% for f in page.faqs %}
+      <div style="margin: 14px 0;">
+        <strong>{{ f.question }}</strong>
+        <div>{{ f.answerHtml | safe }}</div>
+      </div>
+    {% endfor %}
+  </section>
+
+</body>
+</html>
