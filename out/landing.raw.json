@@ -1,0 +1,423 @@
+{
+  "seo_meta_title": "Area Converter India - Convert Sq Ft, Acre, Hectare & More | Square Yards",
+  "seo_meta_description": "Easily convert land and property area units like Square Feet, Acre, Hectare, Cent, Bigha and many others with Square Yards Area Converter. Perfect for homebuyers, investors & brokers.",
+  "h1_heading": "Area Converter Tool",
+  "h1_subheading_2liner": "Convert property and land area units instantly. Trusted by homebuyers, renters, investors, and brokers across India.",
+  "what_is_section_title": "What is an Area Converter?",
+  "what_is_description_html": "<p>An area converter is a tool that helps you change measurements of land or property from one unit to another quickly and accurately. In India, real estate listings and official documents often use different units like Square Feet, Acre, Hectare, Cent, Bigha, and more depending on the region or context.</p><p>Using an area converter saves time and avoids confusion when comparing properties or preparing paperwork for buying, selling, or renting. For example, municipal approvals and registry documents may show area in Square Meters, while circle rates or local listings could use Square Feet or Acres.</p><p>This tool is an essential aid for homebuyers, investors, brokers, and students wanting precise, easy conversions across multiple units used pan-India.</p>",
+  "what_is_cards": [
+    {
+      "card_key": "WHERE_IT_MATTERS",
+      "title": "Where it matters",
+      "description": "Real estate listings, government land records, registry documents, circle rates, and municipal approvals often use different area units. An area converter helps navigate these mixed units easily."
+    },
+    {
+      "card_key": "HOW_TO_USE",
+      "title": "How to use",
+      "description": "Select the unit you want to convert from and the unit you want to convert to. Enter the value and get instant results. You can swap units and copy the conversion result with ease."
+    },
+    {
+      "card_key": "ACCURACY_STANDARDS",
+      "title": "Accuracy & Standards",
+      "description": "Our converter uses official conversion factors accepted across India, ensuring precise and trustworthy results every time for your real estate decisions."
+    }
+  ],
+  "all_units_groups": [
+    {
+      "letter": "A",
+      "units": [
+        {
+          "unit_name": "Acre",
+          "unit_symbol": "ac",
+          "one_liner": "A common land measurement unit used across India and internationally.",
+          "where_used": "Widely used in property listings, agriculture land measuring, and registry documents across India.",
+          "pills": [
+            {
+              "label": "Acre → Square Meter",
+              "from_unit_code": null,
+              "to_unit_code": null
+            },
+            {
+              "label": "Acre → Square Feet",
+              "from_unit_code": null,
+              "to_unit_code": null
+            },
+            {
+              "label": "Acre → Hectare",
+              "from_unit_code": null,
+              "to_unit_code": null
+            }
+          ]
+        },
+        {
+          "unit_name": "Ankanam",
+          "unit_symbol": "",
+          "one_liner": "Traditional unit used in some parts of South India for land measurement.",
+          "where_used": "Used locally in parts of Andhra Pradesh and Telangana for agricultural and residential land.",
+          "pills": [
+            {
+              "label": "Ankanam → Square Feet",
+              "from_unit_code": null,
+              "to_unit_code": null
+            },
+            {
+              "label": "Ankanam → Square Meter",
+              "from_unit_code": null,
+              "to_unit_code": null
+            },
+            {
+              "label": "Ankanam → Acre",
+              "from_unit_code": null,
+              "to_unit_code": null
+            }
+          ]
+        },
+        {
+          "unit_name": "Are",
+          "unit_symbol": "a",
+          "one_liner": "Metric unit equal to 100 square meters used to measure land area.",
+          "where_used": "Used in land surveying and property documents in India alongside hectares and square meters.",
+          "pills": [
+            {
+              "label": "Are → Square Meter",
+              "from_unit_code": null,
+              "to_unit_code": null
+            },
+            {
+              "label": "Are → Square Feet",
+              "from_unit_code": null,
+              "to_unit_code": null
+            },
+            {
+              "label": "Are → Hectare",
+              "from_unit_code": null,
+              "to_unit_code": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "letter": "B",
+      "units": [
+        {
+          "unit_name": "Bigha (MP)",
+          "unit_symbol": "",
+          "one_liner": "Local land measurement unit used in Madhya Pradesh.",
+          "where_used": "Used mostly in Madhya Pradesh for agricultural land and rural property.",
+          "pills": [
+            {
+              "label": "Bigha (MP) → Acre",
+              "from_unit_code": null,
+              "to_unit_code": null
+            },
+            {
+              "label": "Bigha (MP) → Square Feet",
+              "from_unit_code": null,
+              "to_unit_code": null
+            },
+            {
+              "label": "Bigha (MP) → Hectare",
+              "from_unit_code": null,
+              "to_unit_code": null
+            }
+          ]
+        },
+        {
+          "unit_name": "Bigha Gujarat",
+          "unit_symbol": "",
+          "one_liner": "Regional land unit used in Gujarat state.",
+          "where_used": "Used locally in Gujarat for farmland and large estate measurements.",
+          "pills": [
+            {
+              "label": "Bigha Gujarat → Acre",
+              "from_unit_code": null,
+              "to_unit_code": null
+            },
+            {
+              "label": "Bigha Gujarat → Square Feet",
+              "from_unit_code": null,
+              "to_unit_code": null
+            },
+            {
+              "label": "Bigha Gujarat → Hectare",
+              "from_unit_code": null,
+              "to_unit_code": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "letter": "C",
+      "units": [
+        {
+          "unit_name": "Cent",
+          "unit_symbol": "",
+          "one_liner": "Commonly used unit to measure land area in South India.",
+          "where_used": "Popular in Kerala, Tamil Nadu, and Karnataka for residential and agricultural land.",
+          "pills": [
+            {
+              "label": "Cent → Square Feet",
+              "from_unit_code": null,
+              "to_unit_code": null
+            },
+            {
+              "label": "Cent → Square Meter",
+              "from_unit_code": null,
+              "to_unit_code": null
+            },
+            {
+              "label": "Square Feet → Cent",
+              "from_unit_code": null,
+              "to_unit_code": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "letter": "H",
+      "units": [
+        {
+          "unit_name": "Hectare",
+          "unit_symbol": "ha",
+          "one_liner": "Metric unit widely used for large land areas; equal to 10,000 square meters.",
+          "where_used": "Used in agriculture, government land records, and real estate for large plots.",
+          "pills": [
+            {
+              "label": "Hectare → Acre",
+              "from_unit_code": null,
+              "to_unit_code": null
+            },
+            {
+              "label": "Hectare → Bigha",
+              "from_unit_code": null,
+              "to_unit_code": null
+            },
+            {
+              "label": "Hectare → Square Feet",
+              "from_unit_code": null,
+              "to_unit_code": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "letter": "S",
+      "units": [
+        {
+          "unit_name": "Square Feet",
+          "unit_symbol": "sq ft",
+          "one_liner": "The most common unit for measuring residential and commercial property area in India.",
+          "where_used": "Used across all property listings, valuations, agreements, and registry documents in India.",
+          "pills": [
+            {
+              "label": "Square Feet → Cent",
+              "from_unit_code": null,
+              "to_unit_code": null
+            },
+            {
+              "label": "Square Feet → Acre",
+              "from_unit_code": null,
+              "to_unit_code": null
+            },
+            {
+              "label": "Square Feet → Square Yard",
+              "from_unit_code": null,
+              "to_unit_code": null
+            }
+          ]
+        },
+        {
+          "unit_name": "Square Meter",
+          "unit_symbol": "sq m",
+          "one_liner": "Metric area unit commonly used for floor plans and official land documents.",
+          "where_used": "Used in municipal records, architectural designs, and some property listings.",
+          "pills": [
+            {
+              "label": "Square Meter → Square Feet",
+              "from_unit_code": null,
+              "to_unit_code": null
+            },
+            {
+              "label": "Square Meter → Square Yard",
+              "from_unit_code": null,
+              "to_unit_code": null
+            },
+            {
+              "label": "Square Meter → Cent",
+              "from_unit_code": null,
+              "to_unit_code": null
+            }
+          ]
+        },
+        {
+          "unit_name": "Square Yard",
+          "unit_symbol": "sq yd",
+          "one_liner": "Unit commonly used in Indian real estate for measuring land and carpet areas.",
+          "where_used": "Used for property listings, registry documents, and construction measurements in India.",
+          "pills": [
+            {
+              "label": "Square Yard → Square Feet",
+              "from_unit_code": null,
+              "to_unit_code": null
+            },
+            {
+              "label": "Square Yard → Square Meter",
+              "from_unit_code": null,
+              "to_unit_code": null
+            },
+            {
+              "label": "Square Feet → Square Yard",
+              "from_unit_code": null,
+              "to_unit_code": null
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "how_it_works_heading": "How Area Conversion Works on Square Yards",
+  "how_it_works_description_html": "<p>Using the Square Yards Area Converter is simple and fast. Start by selecting the area unit you have (like Square Meter, Acre, or Cent) and the unit you want to convert to. Enter the value, and the tool instantly provides the converted result. You can swap units with one click or copy the result to your clipboard for easy sharing. Our system uses verified conversion factors to ensure accuracy. You can trust the result for comparing property sizes, filling forms, or making informed real estate decisions.</p>",
+  "how_it_works_formula_html": "<p>The general formula used for conversion is:</p><ul><li><strong>Value_in_target_unit = Value_in_source_unit × Conversion_Factor</strong></li></ul>",
+  "how_it_works_example_html": "<p>For example, converting 50 Square Meters to Square Feet: Using the conversion factor 10.7639, multiply 50 × 10.7639 = 538.195 Square Feet.</p>",
+  "major_units": [
+    {
+      "unit_name": "Square Foot",
+      "unit_symbol": "sq ft",
+      "one_liner": "Primary unit for measuring area in Indian residential and commercial properties.",
+      "where_used": "Used universally on property listings, sale agreements, and land registry documents.",
+      "conversion_label": "1 Square Foot = 0.092903 Square Meter"
+    },
+    {
+      "unit_name": "Acre",
+      "unit_symbol": "ac",
+      "one_liner": "Large-scale land measurement used in agriculture and property development.",
+      "where_used": "Commonly used in rural land sales and agricultural land measurements across India.",
+      "conversion_label": "1 Acre = 4046.86 Square Meter"
+    },
+    {
+      "unit_name": "Hectare",
+      "unit_symbol": "ha",
+      "one_liner": "Metric unit widely used for measuring large areas of land, especially in agriculture.",
+      "where_used": "Used in government land records and agricultural land transactions.",
+      "conversion_label": "1 Hectare = 2.47105 Acres"
+    }
+  ],
+  "quick_ref_rows": [
+    {
+      "from_unit_label": "Square Meter",
+      "to_unit_label": "Square Feet",
+      "factor": 10.7639,
+      "region": "Pan-India",
+      "usage": "Property listings / documentation"
+    },
+    {
+      "from_unit_label": "Hectare",
+      "to_unit_label": "Acre",
+      "factor": 2.47105,
+      "region": "Pan-India",
+      "usage": "Agriculture land, property transactions"
+    },
+    {
+      "from_unit_label": "Cent",
+      "to_unit_label": "Square Feet",
+      "factor": 435.6,
+      "region": "South India",
+      "usage": "Residential land measurements in South Indian states"
+    },
+    {
+      "from_unit_label": "Square Feet",
+      "to_unit_label": "Cent",
+      "factor": 0.00229568,
+      "region": "South India",
+      "usage": "For converting property sizes in South Indian listings"
+    },
+    {
+      "from_unit_label": "Hectare",
+      "to_unit_label": "Bigha",
+      "factor": 7.48,
+      "region": "North India",
+      "usage": "Rural land measuring in parts of Northern India"
+    },
+    {
+      "from_unit_label": "Square Feet",
+      "to_unit_label": "Square Yard",
+      "factor": 0.111111,
+      "region": "Pan-India",
+      "usage": "Used in construction and property area conversions"
+    },
+    {
+      "from_unit_label": "Square Yard",
+      "to_unit_label": "Square Feet",
+      "factor": 9.0,
+      "region": "Pan-India",
+      "usage": "Common conversion in property measurement"
+    },
+    {
+      "from_unit_label": "Square Feet",
+      "to_unit_label": "Acre",
+      "factor": 0.0000229568,
+      "region": "Pan-India",
+      "usage": "Land and property size conversions"
+    },
+    {
+      "from_unit_label": "Square Meter",
+      "to_unit_label": "Square Yard",
+      "factor": 1.19599,
+      "region": "Pan-India",
+      "usage": "Measurement conversions in property and land"
+    },
+    {
+      "from_unit_label": "Square Yard",
+      "to_unit_label": "Square Meter",
+      "factor": 0.836127,
+      "region": "Pan-India",
+      "usage": "Property size and land measurement"
+    }
+  ],
+  "faqs": [
+    {
+      "question": "What is an area converter and why do I need it?",
+      "answer_html": "<p>An area converter is a tool that lets you change measurements of space from one unit to another quickly and accurately. In Indian real estate, different units like Square Feet, Cent, Acre, and Bigha are used in various regions and documents. This tool helps you compare property sizes easily, avoid confusion, and fill paperwork correctly.</p>"
+    },
+    {
+      "question": "Which units are commonly used in India for property measurement?",
+      "answer_html": "<p>Common units include Square Feet, Square Meter, Acre, Hectare, Cent (mainly in South India), and Bigha (North India). Different states and contexts may use different units, so converting between them is often necessary.</p>"
+    },
+    {
+      "question": "How do I convert from Square Meter to Square Feet?",
+      "answer_html": "<p>Multiply the value in Square Meters by the conversion factor 10.7639. For example, 100 Square Meters equals 100 × 10.7639 = 1076.39 Square Feet.</p>"
+    },
+    {
+      "question": "What units are best for measuring large land areas?",
+      "answer_html": "<p>For large land like farms or plots, Acre and Hectare are commonly used. Hectare is metric-based and equal to 10,000 Square Meters, while Acre is widely used in rural land measurement across India.</p>"
+    },
+    {
+      "question": "Can I convert from Cent to Square Feet using this tool?",
+      "answer_html": "<p>Yes, the tool supports converting Cent (popular in South India) to Square Feet and vice versa to help you understand property sizes easily.</p>"
+    },
+    {
+      "question": "Is conversion accurate for all regional units like Bigha or Guntha?",
+      "answer_html": "<p>Yes, Square Yards uses official conversion factors specific to each regional unit like Bigha variations or Guntha to ensure accuracy across India.</p>"
+    },
+    {
+      "question": "How do I use the swap feature in the converter?",
+      "answer_html": "<p>The swap button allows you to quickly switch the 'From' and 'To' units without re-entering values, making reverse conversions effortless.</p>"
+    },
+    {
+      "question": "Can I use this tool for commercial and residential property measurements?",
+      "answer_html": "<p>Absolutely, the area converter is designed for all property types including residential, commercial, agricultural, and industrial land measurements.</p>"
+    },
+    {
+      "question": "Is the area converter mobile-friendly?",
+      "answer_html": "<p>Yes, our converter is optimized to work smoothly across mobiles, tablets, and desktops to help you anytime, anywhere.</p>"
+    },
+    {
+      "question": "Can I trust the conversions for legal and registry documents?",
+      "answer_html": "<p>Our converter uses standard, official conversion factors widely accepted in India, making it reliable for legal documentation and property registry purposes.</p>"
+    }
+  ]
+}

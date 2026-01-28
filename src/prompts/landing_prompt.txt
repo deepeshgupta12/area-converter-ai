@@ -1,52 +1,84 @@
-You are an expert real estate content writer specializing in SEO-optimized, clear, non-generic content for Indian users.
+You are generating SEO + AEO content for Square Yards (India) “Area Converter” landing page.
 
-Task:
-Generate ALL textual content required for the "Area Converter" LANDING PAGE for Square Yards.
+IMPORTANT OUTPUT RULES:
+1) Return ONLY valid JSON. No markdown. No extra text.
+2) All long text fields must be HTML strings (<p>, <ul>, <li>, <strong> etc).
+3) Keep language simple (no jargon). Write for homebuyers, renters, investors, brokers, students.
+4) Do NOT claim any unit is restricted to a city unless the unit name itself clearly indicates region/state usage.
+   - City is only an example context; do not over-repeat it.
+5) Use the provided LANDING_CONTEXT_JSON for:
+   - All Units A–Z groups and the pills list for each unit
+   - Major units shortlist
+   - Quick conversion reference rows and factors
+   Do not invent conversion values.
 
-Constraints:
-- Tone: Clear, practical, non-fluffy, no marketing buzzwords.
-- Audience: Home buyers, owners, brokers, and students in India who need quick and accurate area conversions.
-- Never say "information is not available" or similar.
-- Avoid repetition of the same ideas.
-- Avoid generic filler sentences.
+INPUT CONTEXT:
+LANDING_CONTEXT_JSON:
+{{landing_context_json}}
 
-You must produce content for:
-1) SEO
-   - Meta Title
-   - Meta Description
-   - H1 heading
+NOW GENERATE JSON WITH THIS EXACT SCHEMA:
 
-2) Description Section
-   - 2–3 paragraphs explaining what the Area Converter is, who it helps, and typical use cases in Indian real estate.
-   - Mention common units: square feet, square meter, acre, hectare, gaj, bigha etc.
-   - Keep it factual and specific to area conversions, not generic "online tools" talk.
+{
+  "seo_meta_title": "...",
+  "seo_meta_description": "...",
+  "h1_heading": "...",
+  "h1_subheading_2liner": "...",
 
-3) Highlight Blocks (3 blocks)
-   - Each block = {heading, subheading}
-   - Themes: speed/accuracy, India-specific units, free-to-use & simple.
+  "what_is_section_title": "...",
+  "what_is_description_html": "<p>~200 words explaining what an area converter is, why it matters for Indian real estate, and where mixed-units appear (listing pages, circle rate, registry docs, municipal approvals).</p>",
+  "what_is_cards": [
+    { "card_key": "WHERE_IT_MATTERS", "title": "Where it matters", "description": "..." },
+    { "card_key": "HOW_TO_USE", "title": "How to use", "description": "..." },
+    { "card_key": "ACCURACY_STANDARDS", "title": "Accuracy & Standards", "description": "..." }
+  ],
 
-4) Major Units Section
-   - 1 short intro paragraph explaining why multiple units exist in India.
-   - Mention that users can switch between international units and Indian traditional units.
+  "all_units_groups": [
+    {
+      "letter": "A",
+      "units": [
+        {
+          "unit_name": "Acre",
+          "unit_symbol": "ac",
+          "one_liner": "1-line explanation of what it is",
+          "where_used": "Where it is commonly used in India (domain + context)",
+          "pills": [{ "label": "Acre → Square Meter" }, { "label": "Acre → Square Foot" }, { "label": "Acre → Hectare" }]
+        }
+      ]
+    }
+  ],
 
-5) Formulas Section
-   - 1 short paragraph explaining that formulas are visible on the page.
-   - 2–3 example formulas in natural language, e.g., "1 square meter = 10.7639 square feet".
+  "how_it_works_heading": "How Area Conversion Works on Square Yards",
+  "how_it_works_description_html": "<p>~200 words explaining the workflow in the tool (From unit, To unit, swap, copy result, precision note). Must sound Square Yards-specific.</p>",
+  "how_it_works_formula_html": "<p>Explain the general formula: Value_in_to = Value_in_from × factor</p><ul><li>Show one formula line</li></ul>",
+  "how_it_works_example_html": "<p>Give one worked example using a common conversion (like sq m to sq ft). Keep it simple.</p>",
 
-6) FAQs
-   - 4–5 FAQs with helpful answers.
-   - Focus on: why area conversion matters in India, how to interpret units, and basic "how to use" guidance.
+  "major_units": [
+    {
+      "unit_name": "Square Foot",
+      "unit_symbol": "sq ft",
+      "one_liner": "...",
+      "where_used": "...",
+      "conversion_label": "1 Square Foot = 0.092903 Square Meter"
+    }
+  ],
 
-Output format:
-Return a single JSON object with keys:
-- seo_meta_title
-- seo_meta_description
-- h1_heading
-- description_section_html
-- highlight_blocks (array of {heading, subheading})
-- major_units_copy_html
-- formulas_section_html
-- faqs (array of {question, answer_html})
+  "quick_ref_rows": [
+    {
+      "from_unit_label": "Square Meter",
+      "to_unit_label": "Square Feet",
+      "factor": 10.7639,
+      "region": "Pan-India",
+      "usage": "Property listings / documentation"
+    }
+  ],
 
-Write HTML where requested (use basic tags like <p>, <ul>, <li>, <strong>).
-Do NOT include triple backticks.
+  "faqs": [
+    { "question": "...", "answer_html": "<p>...</p>" }
+  ]
+}
+
+ADDITIONAL GUIDANCE:
+- Use LANDING_CONTEXT_JSON to fill all_units_groups (letters, unit names, pills), major_units list, and quick_ref_rows factors.
+- You are allowed to write unit_symbol if you are confident; otherwise keep it empty string.
+- FAQs: exactly 10. Each answer 80–120 words, simple and practical.
+- Make meta title/descriptions high CTR and India-relevant.

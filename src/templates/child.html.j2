@@ -1,0 +1,38 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>{{ page.seo.metaTitle }}</title>
+  <meta name="description" content="{{ page.seo.metaDescription }}" />
+  <link rel="canonical" href="{{ page.seo.canonicalUrl }}" />
+</head>
+<body>
+  <h1>{{ page.seo.h1Heading }}</h1>
+
+  <h2>{{ page.whyConvertSection.sectionHeading }}</h2>
+  {{ page.whyConvertSection.explanationHtml | safe }}
+
+  {% for s in page.standaloneSections %}
+    <h2>{{ s.sectionHeading }}</h2>
+    {{ s.descriptionHtml | safe }}
+  {% endfor %}
+
+  <h2>Examples</h2>
+  {{ page.examplesSection.contentHtml | safe }}
+
+  <h2>Technical details</h2>
+  {{ page.technicalDetailsSection.technicalExplanationHtml | safe }}
+
+  <h2>FAQs</h2>
+  <ul>
+    {% for f in page.faqs %}
+      {% if f.isActive %}
+        <li>
+          <strong>{{ f.question }}</strong>
+          {{ f.answerHtml | safe }}
+        </li>
+      {% endif %}
+    {% endfor %}
+  </ul>
+</body>
+</html>

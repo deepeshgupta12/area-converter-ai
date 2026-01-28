@@ -1,101 +1,124 @@
 # src/mappers.py
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Any, Dict
+from typing import Dict, Any
 
 from .models import LandingPageOutput, ChildPageOutput
 
 
 def build_landing_mongo_doc(
-    ai: LandingPageOutput,
+    ai_output: LandingPageOutput,
     *,
-    slug: str = "area-convertor",
-    locale: str = "en-IN",
-    site_code: str = "sqy-india-web",
-    status: str = "draft",
-    version: int = 1,
+    slug: str,
+    locale: str,
+    site_code: str,
+    canonical_base: str,
 ) -> Dict[str, Any]:
-    """
-    Shapes the AI output into the Mongo document structure for area_converter_pages.
-    """
     now = datetime.utcnow()
 
-    doc: Dict[str, Any] = {
+    return {
         "slug": slug,
         "pageType": "landing",
         "locale": locale,
         "siteCode": site_code,
-        "status": status,
-        "version": version,
+        "status": "draft",
+        "version": 1,
         "createdAt": now,
         "updatedAt": now,
-        # publishedAt can be set by CMS later
         "seo": {
-            "metaTitle": ai.seo_meta_title,
-            "metaDescription": ai.seo_meta_description,
-            "h1Heading": ai.h1_heading,
-            "canonicalUrl": f"https://www.squareyards.com/{slug}",
+            "metaTitle": ai_output.seo_meta_title,
+            "metaDescription": ai_output.seo_meta_description,
+            "h1Heading": ai_output.h1_heading,
+            "canonicalUrl": f"{canonical_base}/{slug}",
         },
-        # From our LandingPageOutput
-        "popularConversions": [],  # still managed manually via CMS
-        "descriptionSection": {
-            "sectionHeading": "About Our Area Converter Tool",
-            "sectionSubheading": "Quick and accurate area conversions for Indian real estate",
-            "mainDescriptionHtml": ai.description_section_html,
-            "highlightBlocks": [
+        "hero": {
+            "h1": ai_output.h1_heading,
+            "subheading2Liner": ai_output.h1_subheading_2liner,
+        },
+        "whatIsAreaConverter": {
+            "sectionTitle": ai_output.what_is_section_title,
+            "descriptionHtml": ai_output.what_is_description_html,
+            "cards": [
                 {
-                    "blockKey": f"BLOCK_{idx+1}",
-                    "isVisible": True,
-                    "heading": block["heading"],
-                    "subheading": block["subheading"],
-                    "sortOrder": idx + 1,
+                    "cardKey": c.card_key,
+                    "title": c.title,
+                    "description": c.description,
                 }
-                for idx, block in enumerate(ai.highlight_blocks)
+                for c in ai_output.what_is_cards
             ],
         },
-        "majorUnits": [],  # you’ll likely populate this from unit master + your own copy
-        "formulasSection": {
-            "showFormulasSection": True,
-            "sectionTitle": "Common Area Conversion Formulas",
-            "sectionDescription": ai.formulas_section_html,
-            "formulaExamples": [],  # if you want, you can parse formulas into structured rows later
+        "allUnitsAZ": [
+            {
+                "letter": g.letter,
+                "units": [
+                    {
+                        "unitName": u.unit_name,
+                        "unitSymbol": u.unit_symbol,
+                        "oneLiner": u.one_liner,
+                        "whereUsed": u.where_used,
+                        "pills": [{"label": p.label} for p in u.pills],
+                    }
+                    for u in g.units
+                ],
+            }
+            for g in ai_output.all_units_groups
+        ],
+        "howAreaConversionWorks": {
+            "sectionHeading": ai_output.how_it_works_heading,
+            "descriptionHtml": ai_output.how_it_works_description_html,
+            "formulaHtml": ai_output.how_it_works_formula_html,
+            "exampleHtml": ai_output.how_it_works_example_html,
+        },
+        "majorUnitsExplained": [
+            {
+                "unitName": m.unit_name,
+                "unitSymbol": m.unit_symbol,
+                "oneLiner": m.one_liner,
+                "whereUsed": m.where_used,
+                "conversionLabel": m.conversion_label,
+            }
+            for m in ai_output.major_units
+        ],
+        "quickConversionReference": {
+            "rows": [
+                {
+                    "fromUnitLabel": r.from_unit_label,
+                    "toUnitLabel": r.to_unit_label,
+                    "factor": r.factor,
+                    "region": r.region,
+                    "usage": r.usage,
+                }
+                for r in ai_output.quick_ref_rows
+            ]
         },
         "faqs": [
             {
-                "question": faq["question"],
-                "answerHtml": faq["answer_html"],
+                "question": f.question,
+                "answerHtml": f.answer_html,
                 "isActive": True,
-                "sortOrder": idx + 1,
+                "sortOrder": i + 1,
             }
-            for idx, faq in enumerate(ai.faqs)
+            for i, f in enumerate(ai_output.faqs)
         ],
     }
 
-    return doc
-
 
 def build_child_mongo_doc(
-    ai: ChildPageOutput,
+    ai_output: ChildPageOutput,
     *,
     parent_slug: str,
     slug: str,
     url_path: str,
+    locale: str,
+    site_code: str,
+    canonical_base: str,
     from_unit_code: str,
     to_unit_code: str,
-    from_unit_label: str,
-    to_unit_label: str,
-    locale: str = "en-IN",
-    site_code: str = "sqy-india-web",
-    status: str = "draft",
-    version: int = 1,
-    last_updated_display_date: datetime | None = None,
 ) -> Dict[str, Any]:
-    """
-    Shapes the AI output into the Mongo document structure for area_converter_child_pages.
-    """
     now = datetime.utcnow()
-    last_display = last_updated_display_date or now
 
-    doc: Dict[str, Any] = {
+    return {
         "parentSlug": parent_slug,
         "slug": slug,
         "urlPath": url_path,
@@ -103,53 +126,51 @@ def build_child_mongo_doc(
         "toUnitCode": to_unit_code,
         "locale": locale,
         "siteCode": site_code,
-        "status": status,
-        "version": version,
+        "status": "draft",
+        "version": 1,
         "createdAt": now,
         "updatedAt": now,
-        "lastUpdatedDisplayDate": last_display,
+        "lastUpdatedDisplayDate": now,
         "seo": {
-            "metaTitle": ai.seo_meta_title,
-            "metaDescription": ai.seo_meta_description,
-            "h1Heading": ai.h1_heading,
-            "canonicalUrl": f"https://www.squareyards.com{url_path}",
+            "metaTitle": ai_output.seo_meta_title,
+            "metaDescription": ai_output.seo_meta_description,
+            "h1Heading": ai_output.h1_heading,
+            "canonicalUrl": f"{canonical_base}{url_path}",
         },
-        "popularConversions": [],  # can be filled from your India-unit master later
+        "popularConversions": [],
         "whyConvertSection": {
-            "sectionHeading": f"Why convert {from_unit_label} to {to_unit_label}?",
-            "explanationHtml": ai.why_convert_section_html,
+            "sectionHeading": f"Why convert {from_unit_code} to {to_unit_code}?",
+            "explanationHtml": ai_output.why_convert_section_html,
         },
         "standaloneSections": [
             {
                 "unitCode": from_unit_code,
-                "sectionHeading": f"What is {from_unit_label}?",
-                "descriptionHtml": ai.from_unit_section_html,
+                "sectionHeading": f"What is {from_unit_code}?",
+                "descriptionHtml": ai_output.from_unit_section_html,
                 "sectionKey": "fromUnit",
                 "sortOrder": 1,
             },
             {
                 "unitCode": to_unit_code,
-                "sectionHeading": f"What is {to_unit_label}?",
-                "descriptionHtml": ai.to_unit_section_html,
+                "sectionHeading": f"What is {to_unit_code}?",
+                "descriptionHtml": ai_output.to_unit_section_html,
                 "sectionKey": "toUnit",
                 "sortOrder": 2,
             },
         ],
         "faqs": [
             {
-                "question": faq["question"],
-                "answerHtml": faq["answer_html"],
+                "question": faq.get("question", ""),
+                "answerHtml": faq.get("answer_html", ""),
                 "isActive": True,
-                "sortOrder": idx + 1,
+                "sortOrder": i + 1,
             }
-            for idx, faq in enumerate(ai.faqs)
+            for i, faq in enumerate(ai_output.faqs)
         ],
-        "examplesSection": {
-            "contentHtml": ai.examples_section_html,
-        },
+        "examplesSection": {"contentHtml": ai_output.examples_section_html},
         "technicalDetailsSection": {
-            "technicalExplanationHtml": ai.technical_details_html,
-            "conversionTableRows": [],  # if you later auto-generate numeric rows, they go here
+            "technicalExplanationHtml": ai_output.technical_details_html,
+            "conversionTableRows": [],
             "precisionNotesHtml": "",
         },
         "pageSettings": {
@@ -161,5 +182,3 @@ def build_child_mongo_doc(
             "changeFrequency": "monthly",
         },
     }
-
-    return doc
