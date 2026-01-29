@@ -90,7 +90,7 @@ def build_regen_prompt(
         "faqs": (
             "Return JSON: {\"faqs\": [{\"question\":\"...\",\"answerHtml\":\"...\"}, ...]}. "
             "MUST be exactly 10 FAQs. "
-            "Each answerHtml MUST be 75–105 words (HTML) and MUST include exactly TWO <p> paragraphs. "
+            "Each answerHtml MUST be 30–105 words (HTML) and MUST include exactly TWO <p> paragraphs. "
             "Do not use <ul> in FAQs. "
             "Each answer must include: (1) a real-estate context line (listing/doc/loan/valuation), "
             "(2) a directional conversion hint (from → to), and (3) a small practical note about rounding/units. "
