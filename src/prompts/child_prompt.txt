@@ -1,224 +1,136 @@
-You are an expert real estate content writer specializing in Indian measurement units and SEO/AEO content.
+You are generating SEO + AEO content for an Indian real-estate Area Converter child page.
 
-The content you write will be used on an AREA CONVERTER CHILD PAGE.
+You MUST output ONLY valid JSON (no markdown, no backticks, no commentary).
+All HTML must be valid, clean, and safe (no scripts, no inline styles). Use <p>, <ul>, <li>, <strong>, <em>, <table>, <thead>, <tbody>, <tr>, <th>, <td>.
 
-This page represents converting FROM one unit TO another specific unit. Direction matters for SEO and AEO: the text must be specifically about converting FROM {{from_unit_label}} TO {{to_unit_label}} and must NOT read like generic text that would work equally well for the reverse.
+CRITICAL RULES
+1) Directionality: This page is ONLY about converting FROM {{from_unit_label}} ({{from_unit_code}}) TO {{to_unit_label}} ({{to_unit_code}}).
+   - Content must read as “from → to”.
+   - Do not write generic copy that would work equally well for the reverse page.
+   - Avoid mirrored phrasing. Use distinct angles, examples, contexts, and FAQs for this direction.
+
+2) Uniqueness vs reverse page:
+   - Assume the reverse page exists ({{to_unit_label}} → {{from_unit_label}}).
+   - Do NOT reuse sentences/paragraph structures that could be swapped.
+   - Use distinct “why convert” motivations, distinct real-world examples, and distinct FAQs.
+
+3) Audience: Must be understandable to lay users and Google crawlers.
+   - No heavy jargon. Explain terms simply.
+   - Must still sound professional and real-estate relevant.
+
+4) India-first context:
+   - Prefer Pan-India phrasing by default.
+   - If a unit is clearly regional (based on the unit name itself), mention likely Indian regions/states where it appears.
+   - Do NOT force city-specific phrasing for global units.
+   - City context is: {{city_name}}. Use it only when it genuinely makes sense.
+
+5) Factor handling:
+   - If {{factor_to_unit}} is numeric, use it consistently in examples, the “1 from equals” line, and quick reference table.
+   - If not numeric or missing, explain factor variability (regional definitions) and rely on the calculator.
+
+6) Symbols:
+   - Use the unit symbols provided by input.
+   - fromUnitSymbol: {{from_unit_symbol}}
+   - toUnitSymbol: {{to_unit_symbol}}
+
+STRICT LENGTH TARGETS (aim MID-RANGE to avoid failures)
+- hero.subtitle: TARGET 52–56 words (plain text, not HTML)
+- whyConvert.contentHtml: TARGET 235–255 words (HTML)
+- fromUnitCard.descriptionHtml: TARGET 225–255 words (HTML)
+- toUnitCard.descriptionHtml: TARGET 225–255 words (HTML)
+- technicalBackground.technicalExplanationHtml: TARGET 170–185 words (HTML)
+- technicalBackground.precisionNotesHtml: TARGET 55–70 words (HTML)
+- Each FAQ answerHtml: TARGET 75–95 words (HTML)
+- quickConversionReference.rows: exactly 8 rows
+- realWorldExamples.cards: exactly 3 cards
+If you are short, add one extra sentence or a short <ul> to reach the target. Do NOT be concise.
+
+OUTPUT JSON SCHEMA (must match exactly)
+
+{
+  "seo": {
+    "metaTitle": "string",
+    "metaDescription": "string",
+    "h1Heading": "string"
+  },
+  "hero": {
+    "slug": "string (kebab-case, e.g., sq-m-to-sq-ft)",
+    "h1": "string",
+    "subtitle": "string (plain text, target 52–56 words)",
+    "fromUnit": { "code": "string", "name": "string", "symbol": "string", "region": "string" },
+    "toUnit":   { "code": "string", "name": "string", "symbol": "string", "region": "string" },
+    "oneFromEquals": "string (e.g., '1 m² = 10.7639 ft²')",
+    "cityContext": "string (short; can be 'Pan-India' if city is not relevant)"
+  },
+  "whyConvert": {
+    "heading": "string",
+    "contentHtml": "string (HTML, target 235–255 words)",
+    "commonUseCases": ["string", "string", "string", "string"],
+    "conversionCard": {
+      "left": "string (e.g., '1 m²')",
+      "right": "string (e.g., '10.7639 ft²')"
+    }
+  },
+  "majorUnitsExplained": {
+    "fromUnitCard": {
+      "title": "string",
+      "descriptionHtml": "string (HTML, target 225–255 words; include India usage + history/origin + states + domains)",
+      "whereUsedBullets": ["string", "string", "string", "string"],
+      "quickEquivalence": "string (e.g., 'Quick equivalence: 1 m² = 10.7639 ft²')"
+    },
+    "toUnitCard": {
+      "title": "string",
+      "descriptionHtml": "string (HTML, target 225–255 words; include India usage + history/origin + states + domains)",
+      "whereUsedBullets": ["string", "string", "string", "string"],
+      "quickEquivalence": "string"
+    }
+  },
+  "realWorldExamples": {
+    "heading": "string",
+    "cards": [
+      { "title": "Small Apartment", "fromValue": "string", "toValue": "string", "note": "string" },
+      { "title": "Family Home",     "fromValue": "string", "toValue": "string", "note": "string" },
+      { "title": "Big Apartment",   "fromValue": "string", "toValue": "string", "note": "string" }
+    ]
+  },
+  "technicalBackground": {
+    "heading": "string",
+    "technicalExplanationHtml": "string (HTML, target 170–185 words; plain language)",
+    "differencesBullets": ["string", "string", "string"],
+    "precisionNotesHtml": "string (HTML, target 55–70 words)"
+  },
+  "quickConversionReference": {
+    "heading": "string",
+    "columns": ["string", "string", "string"],
+    "rows": [
+      { "from": "number", "to": "number", "commonUse": "string" }
+    ]
+  },
+  "faqs": [
+    { "question": "string", "answerHtml": "string (HTML)" }
+  ]
+}
+
+CONTENT GUIDANCE (must follow)
+- H1 must clearly say “{{from_unit_label}} to {{to_unit_label}} Converter” or “Convert {{from_unit_label}} to {{to_unit_label}}”.
+- SEO metaTitle/metaDescription must be India + real-estate oriented and directional.
+- WhyConvert must reference India property contexts: listings, carpet/built-up area, floor plans/approvals, valuation, negotiations, lender docs, registry/agreements, etc.
+- MajorUnitsExplained cards must include:
+  - what it is
+  - how it’s used in Indian real estate
+  - a short origin/history note
+  - where it’s seen (states/regions) if relevant
+  - 4 bullets “Where is it used?”
+- RealWorldExamples:
+  - Values should feel realistic for Indian apartment sizes
+  - Must be directional and computed using the factor
+- QuickConversionReference:
+  - Use 8 rows. Choose from-values intelligently and compute to-values using factor.
+
+Now generate the JSON for this page using:
+FROM: {{from_unit_label}} ({{from_unit_code}}), symbol {{from_unit_symbol}}, region {{from_unit_region}}
+TO:   {{to_unit_label}} ({{to_unit_code}}), symbol {{to_unit_symbol}}, region {{to_unit_region}}
+FACTOR: {{factor_to_unit}}
+CITY: {{city_name}}
 
 {{direction_note}}
-
-Inputs (context):
-- FROM unit code: {{from_unit_code}}
-- FROM unit label: {{from_unit_label}}
-- FROM unit region: {{from_unit_region}}
-- TO unit code: {{to_unit_code}}
-- TO unit label: {{to_unit_label}}
-- TO unit region: {{to_unit_region}}
-- Approximate factor (1 FROM ≈ X TO): {{factor_to_unit}}
-- Optional city: {{city_name}}  (only use if it naturally fits; otherwise keep content Pan-India)
-
---------------------------------------------------
-GLOBAL RULES
---------------------------------------------------
-- Tone: clear, practical, friendly. No marketing fluff, no heavy jargon.
-- Audience:
-  - First-time home buyers
-  - Upgraders and end-users
-  - Property investors
-  - Builders, brokers, and real estate professionals
-  - General layman users (everything must be understandable to a non-expert)
-- Primary domain: Indian real estate. Also mention other relevant domains where natural (construction, land records, agriculture, surveying, architecture, infrastructure, loans).
-- Uniqueness requirement:
-  - Content for FROM → TO must be clearly different from TO → FROM.
-  - Do not mirror sentences or simply swap unit names.
-  - Each section should contain directional wording like “convert {{from_unit_label}} to {{to_unit_label}}” so it cannot be reused for the reverse page.
-- Use your own knowledge of Indian measurement practices to decide if a unit is regional or widely used.
-
---------------------------------------------------
-LOCALISATION & GEOGRAPHIC USAGE
---------------------------------------------------
-You receive:
-- FROM unit region: {{from_unit_region}}        (e.g. "Andhra Pradesh", "Pan-India")
-- TO unit region: {{to_unit_region}}            (e.g. "Pan-India", "Karnataka")
-- Optional city name: {{city_name}}             (city where the user may be searching from)
-
-Follow these rules strictly:
-
-1. Infer scope from the unit names and regions, not from the city alone
-   - If a unit is strongly associated with specific Indian states/belts, explicitly mention those states/regions and describe regional usage.
-     Example: local land units used mainly in Andhra Pradesh, Telangana, Karnataka, etc.
-   - If a unit is widely used across India or globally (metric or international units), treat it as Pan-India/global and do NOT say it “belongs” to any single city.
-
-2. How to use {{city_name}}
-   - {{city_name}} is only a hint of search origin.
-   - Mention {{city_name}} at most TWO times in the entire page.
-   - Use it only as an example, e.g.
-     - “in cities like {{city_name}} and other major metros…”
-     - “especially in metro markets such as {{city_name}}…”
-   - Never imply the unit is specific to {{city_name}}.
-
-3. Preferred geographic phrasing
-   - For broadly used units:
-     - Use “across India”, “Pan-India”, “in Indian real estate markets”, “in metro cities and growing towns”.
-   - For regional units:
-     - Combine state/region references with example cities if useful, but keep it understandable for any Indian user.
-
---------------------------------------------------
-FALLBACK & EDGE-CASE BEHAVIOUR
---------------------------------------------------
-- If factor_to_unit is missing or not numeric:
-  - Explain that exact conversion depends on local definition or government standard for that unit.
-  - Emphasise that users should rely on the calculator for precise values instead of a fixed factor.
-  - Do NOT invent a numeric factor.
-- If either unit is rare/obscure:
-  - Mention that it is a traditional or region-specific unit and that people should confirm exact values with local records or land authorities.
-- Never claim legal validity. For legal/loan/sanction matters, advise users to cross-check with official documents or surveyors.
-
---------------------------------------------------
-SECTIONS TO PRODUCE
---------------------------------------------------
-You must produce content for these sections. Respect the word-count ranges.
-
---------------------------------------------------
-1) SEO
---------------------------------------------------
-Produce:
-- seo_meta_title
-- seo_meta_description
-- h1_heading
-
-Rules:
-- Make them clearly directional: “{{from_unit_label}} to {{to_unit_label}} converter” or equivalent.
-- Mention Indian real estate explicitly where space allows.
-- Keep title under ~60 characters, description 150–165 characters when possible.
-
---------------------------------------------------
-2) “Why convert FROM to TO?” section
---------------------------------------------------
-Output key: why_convert_section_html
-
-- Length: 220–260 words.
-- Structure:
-  - First 2–3 sentences: a concise summary of why this specific conversion matters in Indian real estate.
-  - Then cover scenarios for different personas:
-    - first-time buyer,
-    - upgrader/end-user,
-    - investor,
-    - broker/agent,
-    - builder/developer.
-  - Mention typical contexts:
-    - flats in metro cities,
-    - plots near city limits,
-    - agricultural land,
-    - loan / mortgage evaluation,
-    - registration or sanction plans.
-- Make the direction explicit: the user already has area in {{from_unit_label}} and wants to understand it in {{to_unit_label}}.
-- Use simple, layman-friendly language.
-
---------------------------------------------------
-3) FROM Unit section – “What is {{from_unit_label}}?”
---------------------------------------------------
-Output key: from_unit_section_html
-
-- Length: 230–290 words.
-- Required sub-topics (can be in paragraphs within the section):
-  1. Plain definition in daily language.
-  2. How the unit is used in India, especially in real estate and construction.
-     - Mention if it appears in government land records, municipal plans, RERA documents, loan files, etc.
-  3. History / origin
-     - Metric vs imperial or traditional origin, where it came from, how it became standard in India or in specific states.
-  4. Domains where it appears: real estate, agriculture, surveying, architecture, infrastructure projects, etc.
-  5. Area formula reminder:
-     - Add a simple line explaining that area in this unit usually comes from
-       Length × Breadth = Area, after first measuring in the corresponding length unit.
-- Keep this section strongly focused on {{from_unit_label}} so it cannot be reused for {{to_unit_label}}.
-
---------------------------------------------------
-4) TO Unit section – “What is {{to_unit_label}}?”
---------------------------------------------------
-Output key: to_unit_section_html
-
-- Length: 230–290 words.
-- Same sub-topics as the FROM section, but fully tailored to {{to_unit_label}}:
-  - simple definition,
-  - usage in India and in specific regions if relevant,
-  - brief history/origin,
-  - domains where it is used,
-  - reminder of the area calculation formula using its base length unit.
-- Ensure phrasing, examples, and history details are different from the FROM section.
-- You may lightly contrast it with {{from_unit_label}} (for example, mention if it is smaller/larger or metric vs traditional), but the focus must remain on {{to_unit_label}} itself.
-
---------------------------------------------------
-5) Examples section – “Practical conversion examples”
---------------------------------------------------
-Output key: examples_section_html
-
-- Length: 90–200 words.
-- At the beginning, include a short “How to convert” explanation in plain steps, for example:
-  - “To convert {{from_unit_label}} to {{to_unit_label}}, multiply/divide by {{factor_to_unit}}…”
-  - Show at least one worked example with the arithmetic written out.
-- Then provide 3–5 practical examples using values a real-estate user might see (e.g. 50, 100, 200, 500, 1000 in the FROM unit).
-  - For each example, show:
-    - the FROM value,
-    - the converted TO value (approximate is fine),
-    - a brief description of what that size could represent (room, 1BHK/2BHK, shop, floor plate, plot, etc.).
-- Where natural, you may include a small HTML table such as:
-  - one column for “{{from_unit_label}} value”, one for “{{to_unit_label}} value”, and one for “Typical use”.
-- Use the approximate factor {{factor_to_unit}} if it is numeric; otherwise, explain that users should rely on the calculator for exact values.
-
---------------------------------------------------
-6) Technical details section
---------------------------------------------------
-Output key: technical_details_html
-
-- Length: 150–200 words.
-- Explain the mathematical relationship between the two units in plain language:
-  - If factor is numeric: state clearly
-    “1 {{from_unit_label}} ≈ {{factor_to_unit}} {{to_unit_label}}”
-    and describe whether this comes from squaring a length ratio, dividing by a constant, etc.
-  - If factor is not numeric: explain that the factor depends on local definitions and users should rely on the calculator or local authority.
-- Add a short “differences at a glance” bullet list comparing the two units, e.g.:
-  - which system they belong to (metric / imperial / traditional),
-  - which is larger/smaller,
-  - where each is commonly used in India (high-level view).
-- Avoid heavy formulas; prioritise intuition and clarity over mathematical detail.
-
---------------------------------------------------
-7) FAQs
---------------------------------------------------
-Output key: faqs (array of {question, answer_html})
-
-- Create 4–5 FAQs.
-- Each answer must be 90–140 words (not shorter, not longer).
-- FAQs should not copy sentences from previous sections; reuse ideas but with fresh wording.
-- At least one FAQ must:
-  - Focus on first-time buyers and when this conversion matters to them.
-- At least one FAQ must:
-  - Focus on investors and brokers comparing properties across regions or unit systems.
-- At least one FAQ must:
-  - Clarify common confusions between {{from_unit_label}} and {{to_unit_label}} (size difference, unit system, where each is used).
-- Optionally, one FAQ may touch on:
-  - loan / mortgage processing,
-  - registration or government paperwork,
-  - architectural plans.
-- FAQ localisation:
-  - Prefer questions framed as “in India”, “in Indian real estate”, “in metro cities”, or “in growing urban markets”.
-  - Mention {{city_name}} only if it genuinely adds clarity, and always as an example (e.g. “in cities like {{city_name}} and other metros…”).
-  - FAQ mentions of {{city_name}} count towards the global limit of two total mentions per page.
-
---------------------------------------------------
-OUTPUT FORMAT
---------------------------------------------------
-Return a single JSON object with keys:
-- seo_meta_title
-- seo_meta_description
-- h1_heading
-- why_convert_section_html
-- from_unit_section_html
-- to_unit_section_html
-- examples_section_html
-- technical_details_html
-- faqs (array of {question, answer_html})
-
-For all *_html fields:
-- Write valid, minimal HTML using tags like <p>, <ul>, <li>, <strong>, <table>, <thead>, <tbody>, <tr>, <th>, <td>.
-- Do not wrap content in backticks. No <html> or <body> tags.

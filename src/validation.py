@@ -1,61 +1,80 @@
 # src/validation.py
+from __future__ import annotations
+
 import re
 from typing import List
 
 from .models import ChildPageOutput
 
 
-def html_word_count(html: str) -> int:
-    """Rough word count: strip tags and split on whitespace."""
+_WORD_RE = re.compile(r"\b[\w']+\b", re.UNICODE)
+
+
+def _word_count_from_html(html: str) -> int:
     if not html:
         return 0
-    # remove tags
+    # strip tags
     text = re.sub(r"<[^>]+>", " ", html)
-    # collapse whitespace
-    text = re.sub(r"\s+", " ", text).strip()
+    words = _WORD_RE.findall(text)
+    return len(words)
+
+
+def _word_count_plain(text: str) -> int:
     if not text:
         return 0
-    return len(text.split(" "))
+    return len(_WORD_RE.findall(text))
 
 
 def validate_child_lengths(child: ChildPageOutput) -> List[str]:
-    """
-    Returns a list of human-readable validation issues for word-count ranges.
-    If list is empty, everything is within the desired ranges.
-    """
     issues: List[str] = []
 
-    # Why convert
-    wc_why = html_word_count(child.why_convert_section_html)
-    if not (220 <= wc_why <= 260):
-        issues.append(f"why_convert_section_html: {wc_why} words (expected 220–260).")
+    # Hero subtitle: 45–60 words
+    wc = _word_count_plain(child.hero.subtitle)
+    if wc < 45 or wc > 60:
+        issues.append(f"hero.subtitle should be ~45–60 words, got {wc}.")
 
-    # From unit
-    wc_from = html_word_count(child.from_unit_section_html)
-    if not (230 <= wc_from <= 290):
-        issues.append(f"from_unit_section_html: {wc_from} words (expected 230–290).")
+    # Why convert: 200–300
+    wc = _word_count_from_html(child.why_convert.content_html)
+    if wc < 200 or wc > 300:
+        issues.append(f"whyConvert.contentHtml should be 200–300 words, got {wc}.")
 
-    # To unit
-    wc_to = html_word_count(child.to_unit_section_html)
-    if not (230 <= wc_to <= 290):
-        issues.append(f"to_unit_section_html: {wc_to} words (expected 230–290).")
+    # Major unit cards: 200–300 each
+    wc = _word_count_from_html(child.major_units_explained.from_unit_card.description_html)
+    if wc < 200 or wc > 300:
+        issues.append(f"majorUnitsExplained.fromUnitCard.descriptionHtml should be 200–300 words, got {wc}.")
 
-    # Examples
-    wc_examples = html_word_count(child.examples_section_html)
-    if not (90 <= wc_examples <= 200):
-        issues.append(f"examples_section_html: {wc_examples} words (expected 90–200).")
+    wc = _word_count_from_html(child.major_units_explained.to_unit_card.description_html)
+    if wc < 200 or wc > 300:
+        issues.append(f"majorUnitsExplained.toUnitCard.descriptionHtml should be 200–300 words, got {wc}.")
 
-    # Technical
-    wc_tech = html_word_count(child.technical_details_html)
-    if not (150 <= wc_tech <= 200):
-        issues.append(f"technical_details_html: {wc_tech} words (expected 150–200).")
+    # Technical background: 150–200
+    wc = _word_count_from_html(child.technical_background.technical_explanation_html)
+    if wc < 150 or wc > 200:
+        issues.append(f"technicalBackground.technicalExplanationHtml should be 150–200 words, got {wc}.")
 
-    # FAQ answers
-    for idx, faq in enumerate(child.faqs):
-        wc_ans = html_word_count(faq.get("answer_html", ""))
-        if not (90 <= wc_ans <= 140):
-            issues.append(
-                f"faqs[{idx}].answer_html: {wc_ans} words (expected 90–140)."
-            )
+    # Precision note: 40–80
+    wc = _word_count_from_html(child.technical_background.precision_notes_html)
+    if wc < 40 or wc > 80:
+        issues.append(f"technicalBackground.precisionNotesHtml should be 40–80 words, got {wc}.")
+
+    # FAQs: exactly 10
+    if len(child.faqs) != 10:
+        issues.append(f"faqs should contain exactly 10 items, got {len(child.faqs)}.")
+
+    # FAQ answers: 60–120 words each
+    for i, f in enumerate(child.faqs, start=1):
+        wc = _word_count_from_html(f.answer_html)
+        if wc < 60 or wc > 120:
+            issues.append(f"faqs[{i}].answerHtml should be 60–120 words, got {wc}.")
+
+    # Quick reference: 8 rows recommended
+    if len(child.quick_conversion_reference.rows) != 8:
+        issues.append(
+            f"quickConversionReference.rows should contain 8 rows (recommended), got {len(child.quick_conversion_reference.rows)}."
+        )
+
+    # Real-world examples: exactly 3 cards
+    if len(child.real_world_examples.cards) != 3:
+        issues.append(f"realWorldExamples.cards should contain exactly 3 cards, got {len(child.real_world_examples.cards)}.")
 
     return issues

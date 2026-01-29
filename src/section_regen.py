@@ -1,178 +1,313 @@
 # src/section_regen.py
+from __future__ import annotations
+
 import json
-from pathlib import Path
-from typing import Literal
+from typing import Any, Dict, List, Tuple
 
-from dotenv import load_dotenv
-from openai import OpenAI
-
-from .config.settings import settings
-
-load_dotenv()
-
-if not settings.openai_api_key:
-    raise RuntimeError("OPENAI_API_KEY is not set.")
-
-client = OpenAI(api_key=settings.openai_api_key)
-
-BASE_DIR = Path(__file__).resolve().parent
-PROMPTS_DIR = BASE_DIR / "prompts"
+from .models import ChildPageOutput
+from .validation import validate_child_lengths
 
 
-SectionName = Literal[
-    "why_convert",
-    "from_unit",
-    "to_unit",
-    "examples",
-    "technical",
-    "faq_block",
-]
+# -------------------------
+# Helpers
+# -------------------------
+def _dedupe_keep_order(items: List[str]) -> List[str]:
+    seen = set()
+    out: List[str] = []
+    for x in items:
+        if x not in seen:
+            out.append(x)
+            seen.add(x)
+    return out
 
 
-def load_base_child_prompt() -> str:
-    """We reuse the main child prompt as context, then ask to regenerate just one section."""
-    path = PROMPTS_DIR / "child_prompt.txt"
-    return path.read_text(encoding="utf-8")
+def _issue_to_section_keys(issues: List[str]) -> List[str]:
+    """
+    Map validation issue strings to regen section identifiers.
+
+    These identifiers are used to build a contract and merge a snippet into the
+    alias-shaped JSON (camelCase / nested keys).
+    """
+    keys: List[str] = []
+
+    for msg in issues:
+        if msg.startswith("hero.subtitle"):
+            keys.append("hero.subtitle")
+
+        elif msg.startswith("whyConvert.contentHtml"):
+            keys.append("whyConvert")
+
+        elif msg.startswith("majorUnitsExplained.fromUnitCard.descriptionHtml"):
+            keys.append("majorUnitsExplained.fromUnitCard")
+
+        elif msg.startswith("majorUnitsExplained.toUnitCard.descriptionHtml"):
+            keys.append("majorUnitsExplained.toUnitCard")
+
+        elif msg.startswith("technicalBackground.technicalExplanationHtml"):
+            keys.append("technicalBackground.technicalExplanationHtml")
+
+        elif msg.startswith("technicalBackground.precisionNotesHtml"):
+            keys.append("technicalBackground.precisionNotesHtml")
+
+        elif msg.startswith("faqs[") or msg.startswith("faqs should contain"):
+            keys.append("faqs")  # regen all FAQs if any fails
+
+        elif msg.startswith("quickConversionReference.rows"):
+            keys.append("quickConversionReference.rows")
+
+        elif msg.startswith("realWorldExamples.cards"):
+            keys.append("realWorldExamples.cards")
+
+    return _dedupe_keep_order(keys)
 
 
-def build_section_regen_prompt(
-    section: SectionName,
-    *,
-    from_unit_code: str,
-    to_unit_code: str,
-    from_unit_label: str,
-    to_unit_label: str,
-    factor_to_unit: float | None,
-    from_unit_region: str | None,
-    to_unit_region: str | None,
-    city_name: str | None,
+def _require(snippet: Dict[str, Any], key: str, section_key: str) -> Any:
+    if key not in snippet:
+        raise ValueError(f"Regen snippet missing required key '{key}' for section '{section_key}'. Got keys: {list(snippet.keys())}")
+    return snippet[key]
+
+
+def build_regen_prompt(
+    child_input: Dict[str, Any],
+    current_child_json_alias: Dict[str, Any],
+    section_key: str,
 ) -> str:
-    base_context = load_base_child_prompt()
-
-    directional_note = (
-        f"This is a SECTION REGENERATION request. "
-        f"You must ONLY regenerate the section '{section}' for a page that converts "
-        f"FROM {from_unit_label} TO {to_unit_label}. "
-        f"Do not change the direction and do not generate the full JSON. "
-        f"Return ONLY a JSON object with a single key matching the section."
-    )
-
-    # small description per section
-    section_instruction_map = {
-        "why_convert": "Regenerate the WHY CONVERT section html, respecting the 220–260 word constraint.",
-        "from_unit": "Regenerate the FROM UNIT section html ('What is FROM'), 230–290 words, with history and usage domains.",
-        "to_unit": "Regenerate the TO UNIT section html ('What is TO'), 230–290 words, with history and usage domains.",
-        "examples": "Regenerate the EXAMPLES section html, 90–200 words, with 3–5 practical conversions.",
-        "technical": "Regenerate the TECHNICAL DETAILS section html, 150–200 words, with a clear explanation.",
-        "faq_block": "Regenerate the entire FAQ block as an array of 4–5 FAQs (question + answer_html), each answer 90–140 words.",
+    """
+    Build a strict prompt for regenerating ONLY ONE SECTION.
+    Must return a JSON snippet with ALIAS keys (camelCase).
+    """
+    ctx = {
+        "fromUnitLabel": child_input.get("from_unit_label"),
+        "toUnitLabel": child_input.get("to_unit_label"),
+        "fromUnitSymbol": child_input.get("from_unit_symbol"),
+        "toUnitSymbol": child_input.get("to_unit_symbol"),
+        "factorToUnit": child_input.get("factor_to_unit"),
+        "fromUnitRegion": child_input.get("from_unit_region") or "Pan-India",
+        "toUnitRegion": child_input.get("to_unit_region") or "Pan-India",
+        "cityName": child_input.get("city_name") or "Pan-India",
+        "directionNote": child_input.get("direction_note") or "",
     }
 
-    section_note = section_instruction_map[section]
+    # IMPORTANT: Contracts MUST match your models.py aliases and child_prompt schema.
+    # Also: Aim mid-band to reduce repeated failures.
+    contract_map = {
+        "hero.subtitle": (
+            'Return ONLY JSON: {"subtitle": "..."}.\n'
+            "- subtitle MUST be 50–56 words (plain text, no HTML).\n"
+            "- Make it directional and India + real estate relevant.\n"
+            "- Avoid being too short; add 1 extra context sentence if needed."
+        ),
 
-    factor_str = "N/A" if factor_to_unit is None else str(factor_to_unit)
-    from_region = from_unit_region or "Pan-India"
-    to_region = to_unit_region or "Pan-India"
-    city = city_name or "a major Indian city"
+        "whyConvert": (
+            'Return ONLY JSON: {"contentHtml": "...", "commonUseCases": ["...","...","...","..."], "conversionCard": {"left":"...","right":"..."}}.\n'
+            "- contentHtml MUST be 230–260 words (HTML, 2–3 paragraphs + one short <ul>).\n"
+            "- commonUseCases MUST be exactly 4 strings.\n"
+            "- conversionCard.left/right must match factor and symbols, e.g., '1 m²' and '10.7639 ft²'.\n"
+            "- Include contexts for: first-time buyer, upgrader, investor, broker/agent, developer docs.\n"
+        ),
 
-    # We don't need whole base prompt, but including ensures same style.
+        "majorUnitsExplained.fromUnitCard": (
+            'Return ONLY JSON: {"descriptionHtml":"...","whereUsedBullets":["...","...","...","..."],"quickEquivalence":"..."}.\n'
+            "- descriptionHtml MUST be 220–260 words (HTML).\n"
+            "- Must include: India real estate usage, origin/history, states/regions (only if relevant), and domains.\n"
+            "- whereUsedBullets MUST be exactly 4 bullets.\n"
+            "- quickEquivalence must be directional and include symbols."
+        ),
+
+        "majorUnitsExplained.toUnitCard": (
+            'Return ONLY JSON: {"descriptionHtml":"...","whereUsedBullets":["...","...","...","..."],"quickEquivalence":"..."}.\n'
+            "- descriptionHtml MUST be 220–260 words (HTML).\n"
+            "- Must include: India real estate usage, origin/history, states/regions (only if relevant), and domains.\n"
+            "- whereUsedBullets MUST be exactly 4 bullets.\n"
+            "- quickEquivalence must be directional and include symbols."
+        ),
+
+        "technicalBackground.technicalExplanationHtml": (
+            'Return ONLY JSON: {"technicalExplanationHtml":"..."}.\n'
+            "- MUST be 170–185 words (HTML).\n"
+            "- Explain factor intuition + why round-off happens + directional phrasing."
+        ),
+
+        "technicalBackground.precisionNotesHtml": (
+            'Return ONLY JSON: {"precisionNotesHtml":"..."}.\n'
+            "- MUST be 55–70 words (HTML).\n"
+            "- Mention rounding, measurement standards, and using official documents if legal/loan context."
+        ),
+
+        "faqs": (
+            'Return ONLY JSON: {"faqs":[{"question":"...","answerHtml":"..."}, ...]}.\n'
+            "- MUST be exactly 10 FAQs.\n"
+            "- Each answerHtml MUST be 75–95 words (HTML, usually 1 <p> + optional 1 short <ul>).\n"
+            "- Questions must feel like real user queries in India property context.\n"
+            "- Keep them directional; avoid mirrored phrasing that would fit the reverse page."
+        ),
+
+        "quickConversionReference.rows": (
+            'Return ONLY JSON: {"rows":[{"from":10,"to":107.639,"commonUse":"..."}, ...]}.\n'
+            "- MUST be exactly 8 rows.\n"
+            "- from values should be sensible (10, 25, 50, 100, 150, 200, 500, 1000 when appropriate).\n"
+            "- to MUST be numeric and computed using the factorToUnit (round to 4 decimals max).\n"
+            "- commonUse must be a short realistic usage note."
+        ),
+
+        "realWorldExamples.cards": (
+            'Return ONLY JSON: {"cards":[{"title":"Small Apartment","fromValue":"...","toValue":"...","note":"..."}, ...]}.\n'
+            "- MUST be exactly 3 cards.\n"
+            "- Keep titles as: Small Apartment, Family Home, Big Apartment.\n"
+            "- fromValue/toValue must include units & symbols and be directional.\n"
+            "- note should explain why this example matters (India listing/plan/negotiation context)."
+        ),
+    }
+
+    if section_key not in contract_map:
+        raise ValueError(f"Unknown section_key: {section_key}")
+
+    contract = contract_map[section_key]
+
+    # Provide current JSON for tone continuity but instruct not to copy.
+    # Keep this bounded to avoid huge prompts.
+    current_preview = json.dumps(current_child_json_alias, ensure_ascii=False)
+    current_preview = current_preview[:3500]
+
     return f"""
-{base_context}
+You are regenerating ONLY ONE SECTION of a Square Yards India area conversion CHILD page.
 
-{directional_note}
+SECTION TO REGENERATE: {section_key}
 
-Use the following context:
-- FROM unit code: {from_unit_code}
-- FROM unit label: {from_unit_label}
-- FROM unit region: {from_region}
-- TO unit code: {to_unit_code}
-- TO unit label: {to_unit_label}
-- TO unit region: {to_region}
-- Approximate factor (1 FROM ≈ X TO): {factor_str}
-- Primary city context: {city}
+STRICT OUTPUT RULES:
+- Output ONLY valid JSON for the section snippet. No markdown, no extra text.
+- Use keys EXACTLY as required by the contract (camelCase like contentHtml, answerHtml, commonUseCases).
+- Keep it strictly directional: {ctx["fromUnitLabel"]} → {ctx["toUnitLabel"]}. Do not write reversible copy.
+- Do not fabricate facts beyond general, widely-known context; stay within real estate usage norms.
+- Use the provided factorToUnit if numeric.
 
-{section_note}
+INPUT CONTEXT:
+{json.dumps(ctx, ensure_ascii=False, indent=2)}
 
-Output format:
-Return a single JSON object with:
-- If section = "why_convert": key "why_convert_section_html"
-- If section = "from_unit": key "from_unit_section_html"
-- If section = "to_unit": key "to_unit_section_html"
-- If section = "examples": key "examples_section_html"
-- If section = "technical": key "technical_details_html"
-- If section = "faq_block": key "faqs" (array of objects with question and answer_html)
+SECTION CONTRACT:
+{contract}
 
-Do NOT wrap the JSON in backticks.
-    """.strip()
+CURRENT PAGE JSON (for tone consistency; DO NOT copy verbatim):
+{current_preview}
+""".strip()
 
 
-def call_model(prompt: str) -> dict:
-    response = client.responses.create(
-        model=settings.openai_model,
-        input=prompt,
-    )
-    text = response.output[0].content[0].text
-    return json.loads(text)
+def _set_path(d: Dict[str, Any], path: List[str], value: Any) -> None:
+    cur = d
+    for p in path[:-1]:
+        cur = cur.setdefault(p, {})
+    cur[path[-1]] = value
 
 
-def regenerate_section(
-    section: SectionName,
-    *,
-    from_unit_code: str,
-    to_unit_code: str,
-    from_unit_label: str,
-    to_unit_label: str,
-    factor_to_unit: float | None,
-    from_unit_region: str | None,
-    to_unit_region: str | None,
-    city_name: str | None,
-) -> dict:
-    prompt = build_section_regen_prompt(
-        section,
-        from_unit_code=from_unit_code,
-        to_unit_code=to_unit_code,
-        from_unit_label=from_unit_label,
-        to_unit_label=to_unit_label,
-        factor_to_unit=factor_to_unit,
-        from_unit_region=from_unit_region,
-        to_unit_region=to_unit_region,
-        city_name=city_name,
-    )
-    return call_model(prompt)
+def apply_regen_snippet_alias(
+    child_json_alias: Dict[str, Any],
+    section_key: str,
+    snippet: Dict[str, Any],
+) -> Dict[str, Any]:
+    """
+    Merge regen snippet into the alias-shaped full page JSON.
+    """
+    out = json.loads(json.dumps(child_json_alias))  # deep copy
+
+    if section_key == "hero.subtitle":
+        subtitle = _require(snippet, "subtitle", section_key)
+        _set_path(out, ["hero", "subtitle"], subtitle)
+
+    elif section_key == "whyConvert":
+        # snippet: contentHtml, commonUseCases, conversionCard
+        content = _require(snippet, "contentHtml", section_key)
+        _set_path(out, ["whyConvert", "contentHtml"], content)
+
+        cuc = snippet.get("commonUseCases")
+        if cuc is not None:
+            _set_path(out, ["whyConvert", "commonUseCases"], cuc)
+
+        cc = snippet.get("conversionCard")
+        if cc is not None:
+            _set_path(out, ["whyConvert", "conversionCard"], cc)
+
+    elif section_key == "majorUnitsExplained.fromUnitCard":
+        desc = _require(snippet, "descriptionHtml", section_key)
+        _set_path(out, ["majorUnitsExplained", "fromUnitCard", "descriptionHtml"], desc)
+
+        wub = snippet.get("whereUsedBullets")
+        if wub is not None:
+            _set_path(out, ["majorUnitsExplained", "fromUnitCard", "whereUsedBullets"], wub)
+
+        qe = snippet.get("quickEquivalence")
+        if qe is not None:
+            _set_path(out, ["majorUnitsExplained", "fromUnitCard", "quickEquivalence"], qe)
+
+    elif section_key == "majorUnitsExplained.toUnitCard":
+        desc = _require(snippet, "descriptionHtml", section_key)
+        _set_path(out, ["majorUnitsExplained", "toUnitCard", "descriptionHtml"], desc)
+
+        wub = snippet.get("whereUsedBullets")
+        if wub is not None:
+            _set_path(out, ["majorUnitsExplained", "toUnitCard", "whereUsedBullets"], wub)
+
+        qe = snippet.get("quickEquivalence")
+        if qe is not None:
+            _set_path(out, ["majorUnitsExplained", "toUnitCard", "quickEquivalence"], qe)
+
+    elif section_key == "technicalBackground.technicalExplanationHtml":
+        val = _require(snippet, "technicalExplanationHtml", section_key)
+        _set_path(out, ["technicalBackground", "technicalExplanationHtml"], val)
+
+    elif section_key == "technicalBackground.precisionNotesHtml":
+        val = _require(snippet, "precisionNotesHtml", section_key)
+        _set_path(out, ["technicalBackground", "precisionNotesHtml"], val)
+
+    elif section_key == "faqs":
+        faqs = _require(snippet, "faqs", section_key)
+        _set_path(out, ["faqs"], faqs)
+
+    elif section_key == "quickConversionReference.rows":
+        rows = _require(snippet, "rows", section_key)
+        _set_path(out, ["quickConversionReference", "rows"], rows)
+
+    elif section_key == "realWorldExamples.cards":
+        cards = _require(snippet, "cards", section_key)
+        _set_path(out, ["realWorldExamples", "cards"], cards)
+
+    else:
+        raise ValueError(f"Unhandled section_key: {section_key}")
+
+    return out
 
 
-if __name__ == "__main__":
-    import argparse
+def regen_until_valid(
+    call_model_fn,
+    child_input: Dict[str, Any],
+    child_output: ChildPageOutput,
+    max_rounds: int = 3,
+) -> Tuple[ChildPageOutput, List[str]]:
+    """
+    Regen flow:
+    - Work ONLY on alias-shaped dict to avoid snake/camel mismatch.
+    - After each round merge, validate by rebuilding ChildPageOutput then running validate_child_lengths().
+    """
+    current_alias = child_output.model_dump(by_alias=True)
+    issues = validate_child_lengths(child_output)
 
-    parser = argparse.ArgumentParser(description="Regenerate a specific child-page section.")
-    parser.add_argument("--section", required=True, choices=[
-        "why_convert",
-        "from_unit",
-        "to_unit",
-        "examples",
-        "technical",
-        "faq_block",
-    ])
+    if not issues:
+        return child_output, []
 
-    parser.add_argument("--from_unit_code", required=True)
-    parser.add_argument("--to_unit_code", required=True)
-    parser.add_argument("--from_unit_label", required=True)
-    parser.add_argument("--to_unit_label", required=True)
-    parser.add_argument("--factor_to_unit", type=float)
-    parser.add_argument("--from_unit_region", type=str)
-    parser.add_argument("--to_unit_region", type=str)
-    parser.add_argument("--city_name", type=str)
+    for _round in range(max_rounds):
+        section_keys = _issue_to_section_keys(issues)
+        if not section_keys:
+            break
 
-    args = parser.parse_args()
+        for section_key in section_keys:
+            prompt = build_regen_prompt(child_input, current_alias, section_key)
+            snippet = call_model_fn(prompt)
+            current_alias = apply_regen_snippet_alias(current_alias, section_key, snippet)
 
-    out = regenerate_section(
-        section=args.section,
-        from_unit_code=args.from_unit_code,
-        to_unit_code=args.to_unit_code,
-        from_unit_label=args.from_unit_label,
-        to_unit_label=args.to_unit_label,
-        factor_to_unit=args.factor_to_unit,
-        from_unit_region=args.from_unit_region,
-        to_unit_region=args.to_unit_region,
-        city_name=args.city_name,
-    )
-    print(json.dumps(out, indent=2, ensure_ascii=False))
+        updated = ChildPageOutput.model_validate(current_alias)
+        issues = validate_child_lengths(updated)
+
+        if not issues:
+            return updated, []
+
+    final_obj = ChildPageOutput.model_validate(current_alias)
+    return final_obj, issues
