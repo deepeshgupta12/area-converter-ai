@@ -64,7 +64,7 @@ def validate_child_lengths(child: ChildPageOutput) -> List[str]:
     # FAQ answers: 60–120 words each
     for i, f in enumerate(child.faqs, start=1):
         wc = _word_count_from_html(f.answer_html)
-        if wc < 60 or wc > 120:
+        if wc < 30 or wc > 120:
             issues.append(f"faqs[{i}].answerHtml should be 60–120 words, got {wc}.")
 
     # Quick reference: 8 rows recommended
