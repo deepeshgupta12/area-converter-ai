@@ -3,6 +3,7 @@ import json
 import sys
 from pathlib import Path
 from typing import Any, Dict, Literal, Optional, Tuple, List
+from .section_regen import regen_until_valid
 
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -49,6 +50,8 @@ def render_child_prompt(template: str, child_input: ChildPageInput) -> str:
     text = text.replace("{{from_unit_label}}", child_input.from_unit_label)
     text = text.replace("{{to_unit_code}}", child_input.to_unit_code)
     text = text.replace("{{to_unit_label}}", child_input.to_unit_label)
+    text = text.replace("{{from_unit_symbol}}", child_input.from_unit_symbol or "")
+    text = text.replace("{{to_unit_symbol}}", child_input.to_unit_symbol or "")
 
     text = text.replace(
         "{{factor_to_unit}}",
@@ -386,6 +389,8 @@ if __name__ == "__main__":
     parser.add_argument("--to_unit_code", type=str)
     parser.add_argument("--from_unit_label", type=str)
     parser.add_argument("--to_unit_label", type=str)
+    parser.add_argument("--from_unit_symbol", type=str)
+    parser.add_argument("--to_unit_symbol", type=str)
     parser.add_argument("--factor_to_unit", type=float)
     parser.add_argument("--from_unit_region", type=str)
     parser.add_argument("--to_unit_region", type=str)
@@ -394,6 +399,8 @@ if __name__ == "__main__":
     # Validation flags (for child)
     parser.add_argument("--validate_lengths", action="store_true")
     parser.add_argument("--strict_lengths", action="store_true")
+    parser.add_argument("--auto_regen_failed_sections", action="store_true")
+    parser.add_argument("--regen_rounds", type=int, default=3)
 
     args = parser.parse_args()
 
@@ -453,6 +460,8 @@ if __name__ == "__main__":
             "from_unit_label": args.from_unit_label,
             "to_unit_label": args.to_unit_label,
             "factor_to_unit": args.factor_to_unit,
+            "from_unit_symbol": args.from_unit_symbol,  # <-- ADD
+            "to_unit_symbol": args.to_unit_symbol,      # <-- ADD
             "from_unit_region": args.from_unit_region,
             "to_unit_region": args.to_unit_region,
             "city_name": args.city_name,
@@ -469,12 +478,15 @@ if __name__ == "__main__":
         # Optional length validation for child pages
         if args.validate_lengths or args.strict_lengths:
             issues = validate_child_lengths(ai_output)
+            if issues and args.auto_regen_failed_sections:
+                ai_output, issues = regen_until_valid(call_model, payload, ai_output, max_rounds=args.regen_rounds)
+
             if issues:
                 msg = "\n".join(["Length validation issues:"] + issues)
                 if args.strict_lengths:
                     raise SystemExit(msg)
                 else:
-                    print(msg, file=sys.stderr)
+                    print(msg)
 
         if args.mode == "raw":
             write_or_print(ai_output.model_dump_json(indent=2, ensure_ascii=False), args.out)

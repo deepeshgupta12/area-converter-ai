@@ -1,38 +1,164 @@
 <!doctype html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <title>{{ page.seo.metaTitle }}</title>
-  <meta name="description" content="{{ page.seo.metaDescription }}" />
-  <link rel="canonical" href="{{ page.seo.canonicalUrl }}" />
-</head>
-<body>
-  <h1>{{ page.seo.h1Heading }}</h1>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>{{ page.seo.metaTitle }}</title>
+    <meta name="description" content="{{ page.seo.metaDescription }}" />
+    <link rel="canonical" href="{{ page.seo.canonicalUrl }}" />
+  </head>
+  <body>
+    <!-- HERO -->
+    <section>
+      <h1>{{ page.hero.h1 }}</h1>
+      <p><strong>Slug:</strong> {{ page.slug }}</p>
 
-  <h2>{{ page.whyConvertSection.sectionHeading }}</h2>
-  {{ page.whyConvertSection.explanationHtml | safe }}
+      <p>
+        <strong>{{ page.hero.fromUnit.name }}</strong> ({{ page.hero.fromUnit.symbol }}) →
+        <strong>{{ page.hero.toUnit.name }}</strong> ({{ page.hero.toUnit.symbol }})
+      </p>
 
-  {% for s in page.standaloneSections %}
-    <h2>{{ s.sectionHeading }}</h2>
-    {{ s.descriptionHtml | safe }}
-  {% endfor %}
+      <p><strong>{{ page.hero.oneFromEquals }}</strong></p>
+      <p>{{ page.hero.subtitle }}</p>
+      <p><em>Context:</em> {{ page.hero.cityContext }}</p>
+    </section>
 
-  <h2>Examples</h2>
-  {{ page.examplesSection.contentHtml | safe }}
+    <hr />
 
-  <h2>Technical details</h2>
-  {{ page.technicalDetailsSection.technicalExplanationHtml | safe }}
+    <!-- WHY CONVERT -->
+    <section>
+      <h2>{{ page.whyConvertSection.sectionHeading }}</h2>
 
-  <h2>FAQs</h2>
-  <ul>
-    {% for f in page.faqs %}
-      {% if f.isActive %}
-        <li>
-          <strong>{{ f.question }}</strong>
-          {{ f.answerHtml | safe }}
-        </li>
+      <div>
+        {{ page.whyConvertSection.explanationHtml | safe }}
+      </div>
+
+      {% if page.whyConvertSection.commonUseCases and page.whyConvertSection.commonUseCases|length > 0 %}
+      <h3>Common use cases</h3>
+      <ul>
+        {% for x in page.whyConvertSection.commonUseCases %}
+        <li>{{ x }}</li>
+        {% endfor %}
+      </ul>
       {% endif %}
-    {% endfor %}
-  </ul>
-</body>
+
+      <p>
+        <strong>{{ page.whyConvertSection.conversionCard.left }}</strong>
+        =
+        <strong>{{ page.whyConvertSection.conversionCard.right }}</strong>
+      </p>
+    </section>
+
+    <hr />
+
+    <!-- MAJOR UNITS EXPLAINED -->
+    <section>
+      <h2>Major Area Units Explained</h2>
+
+      <div>
+        <h3>{{ page.majorUnitsExplainedSection.fromUnitCard.title }}</h3>
+        <div>{{ page.majorUnitsExplainedSection.fromUnitCard.descriptionHtml | safe }}</div>
+
+        <h4>Where is it used?</h4>
+        <ul>
+          {% for b in page.majorUnitsExplainedSection.fromUnitCard.whereUsedBullets %}
+          <li>{{ b }}</li>
+          {% endfor %}
+        </ul>
+
+        <p><em>{{ page.majorUnitsExplainedSection.fromUnitCard.quickEquivalence }}</em></p>
+      </div>
+
+      <div>
+        <h3>{{ page.majorUnitsExplainedSection.toUnitCard.title }}</h3>
+        <div>{{ page.majorUnitsExplainedSection.toUnitCard.descriptionHtml | safe }}</div>
+
+        <h4>Where is it used?</h4>
+        <ul>
+          {% for b in page.majorUnitsExplainedSection.toUnitCard.whereUsedBullets %}
+          <li>{{ b }}</li>
+          {% endfor %}
+        </ul>
+
+        <p><em>{{ page.majorUnitsExplainedSection.toUnitCard.quickEquivalence }}</em></p>
+      </div>
+    </section>
+
+    <hr />
+
+    <!-- REAL WORLD EXAMPLES -->
+    <section>
+      <h2>{{ page.realWorldExamplesSection.heading }}</h2>
+      <ul>
+        {% for c in page.realWorldExamplesSection.cards %}
+        <li>
+          <strong>{{ c.title }}:</strong> {{ c.fromValue }} → {{ c.toValue }}
+          <br />
+          <em>{{ c.note }}</em>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    <hr />
+
+    <!-- TECHNICAL BACKGROUND -->
+    <section>
+      <h2>{{ page.technicalBackgroundSection.heading }}</h2>
+
+      <div>{{ page.technicalBackgroundSection.technicalExplanationHtml | safe }}</div>
+
+      {% if page.technicalBackgroundSection.differencesBullets and page.technicalBackgroundSection.differencesBullets|length > 0 %}
+      <h3>Differences at a glance</h3>
+      <ul>
+        {% for d in page.technicalBackgroundSection.differencesBullets %}
+        <li>{{ d }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+
+      <div>
+        <h3>Precision note</h3>
+        {{ page.technicalBackgroundSection.precisionNotesHtml | safe }}
+      </div>
+    </section>
+
+    <hr />
+
+    <!-- QUICK CONVERSION REFERENCE -->
+    <section>
+      <h2>{{ page.quickConversionReferenceSection.heading }}</h2>
+
+      <table border="1" cellspacing="0" cellpadding="6">
+        <thead>
+          <tr>
+            <th>{{ page.quickConversionReferenceSection.columns[0] }}</th>
+            <th>{{ page.quickConversionReferenceSection.columns[1] }}</th>
+            <th>{{ page.quickConversionReferenceSection.columns[2] }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in page.quickConversionReferenceSection.rows %}
+          <tr>
+            <td>{{ r["from"] }}</td>
+            <td>{{ r["to"] }}</td>
+            <td>{{ r["commonUse"] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+    <hr />
+
+    <!-- FAQs -->
+    <section>
+      <h2>FAQs</h2>
+      {% for f in page.faqs %}
+      <div>
+        <h3>{{ f.question }}</h3>
+        <div>{{ f.answerHtml | safe }}</div>
+      </div>
+      {% endfor %}
+    </section>
+  </body>
 </html>
