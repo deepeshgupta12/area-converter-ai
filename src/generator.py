@@ -500,8 +500,6 @@ if __name__ == "__main__":
         # ==========================================================
         # CHILD
         # ==========================================================
-        if not (args.from_unit_code and args.to_unit_code and args.from_unit_label and args.to_unit_label):
-            raise SystemExit("For child type, you must provide from/to unit codes and labels.")
 
         # ----------------------------------------------------------
         # Build mongo/html from existing RAW JSON (no model call)
@@ -513,6 +511,23 @@ if __name__ == "__main__":
 
             raw_dict = json.loads(raw_path.read_text(encoding="utf-8"))
             ai_output = ChildPageOutput.model_validate(raw_dict)
+
+            # Prefer CLI values if provided; otherwise infer from RAW
+            inferred_from_code = getattr(ai_output.hero.from_unit, "code", None)
+            inferred_to_code = getattr(ai_output.hero.to_unit, "code", None)
+            inferred_from_label = getattr(ai_output.hero.from_unit, "name", None)
+            inferred_to_label = getattr(ai_output.hero.to_unit, "name", None)
+
+            from_unit_code = args.from_unit_code or inferred_from_code
+            to_unit_code = args.to_unit_code or inferred_to_code
+            from_unit_label = args.from_unit_label or inferred_from_label
+            to_unit_label = args.to_unit_label or inferred_to_label
+
+            if not (from_unit_code and to_unit_code and from_unit_label and to_unit_label):
+                raise SystemExit(
+                    "When using --input_raw_json, either provide --from_unit_code/--to_unit_code "
+                    "and --from_unit_label/--to_unit_label, OR ensure RAW JSON contains hero.fromUnit/toUnit."
+                )
 
             # Optional validation (cannot auto-regen without model)
             if args.validate_lengths or args.strict_lengths:
@@ -530,7 +545,7 @@ if __name__ == "__main__":
                     else:
                         print(msg)
 
-            slug = f"{args.from_unit_code.lower().replace('_', '-')}-to-{args.to_unit_code.lower().replace('_', '-')}"
+            slug = f"{from_unit_code.lower().replace('_', '-')}-to-{to_unit_code.lower().replace('_', '-')}"
             url_path = f"/area-convertor/{slug}"
 
             mongo_doc = build_child_mongo_doc(
@@ -538,10 +553,10 @@ if __name__ == "__main__":
                 parent_slug="area-convertor",
                 slug=slug,
                 url_path=url_path,
-                from_unit_code=args.from_unit_code,
-                to_unit_code=args.to_unit_code,
-                from_unit_label=args.from_unit_label,
-                to_unit_label=args.to_unit_label,
+                from_unit_code=from_unit_code,
+                to_unit_code=to_unit_code,
+                from_unit_label=from_unit_label,
+                to_unit_label=to_unit_label,
             )
 
             if args.mode == "mongo":
@@ -555,8 +570,11 @@ if __name__ == "__main__":
             raise SystemExit(0)
 
         # ----------------------------------------------------------
-        # Normal flow: call model for child raw, optionally regen
+        # Normal flow: model call required
         # ----------------------------------------------------------
+        if not (args.from_unit_code and args.to_unit_code and args.from_unit_label and args.to_unit_label):
+            raise SystemExit("For child type (without --input_raw_json), you must provide from/to unit codes and labels.")
+
         payload = {
             "from_unit_code": args.from_unit_code,
             "to_unit_code": args.to_unit_code,
