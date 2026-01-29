@@ -7,15 +7,6 @@ from typing import Dict, Any
 from .models import LandingPageOutput, ChildPageOutput
 
 
-def _join_canonical(base: str, path: str) -> str:
-    base = (base or "").rstrip("/")
-    if not path:
-        return base
-    if not path.startswith("/"):
-        path = "/" + path
-    return base + path
-
-
 def build_landing_mongo_doc(
     ai_output: LandingPageOutput,
     *,
@@ -25,7 +16,6 @@ def build_landing_mongo_doc(
     canonical_base: str,
 ) -> Dict[str, Any]:
     now = datetime.now(timezone.utc)
-    canonical_url = _join_canonical(canonical_base, f"/{slug}")
 
     return {
         "slug": slug,
@@ -40,7 +30,7 @@ def build_landing_mongo_doc(
             "metaTitle": ai_output.seo_meta_title,
             "metaDescription": ai_output.seo_meta_description,
             "h1Heading": ai_output.h1_heading,
-            "canonicalUrl": canonical_url,
+            "canonicalUrl": f"{canonical_base.rstrip('/')}/{slug}",
         },
         "hero": {
             "h1": ai_output.h1_heading,
@@ -122,7 +112,7 @@ def build_child_mongo_doc(
     version: int = 1,
 ) -> Dict[str, Any]:
     now = datetime.now(timezone.utc)
-    canonical_url = _join_canonical(canonical_base, url_path)
+    canonical_url = canonical_base.rstrip("/") + url_path
 
     return {
         "parentSlug": parent_slug,
