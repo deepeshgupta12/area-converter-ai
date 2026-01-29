@@ -1,6 +1,5 @@
 # src/generator.py
 import json
-import sys
 from pathlib import Path
 from typing import Any, Dict, Literal, Optional, Tuple, List
 
@@ -156,21 +155,31 @@ def _extract_first_json_object(text: str) -> str:
                 if depth == 0:
                     return s[start : i + 1]
 
-    # If we never balanced, return from first { onward
     return s[start:]
 
 
 def call_model(prompt: str) -> Dict[str, Any]:
     """
     Calls OpenAI and returns parsed JSON dict.
-    Expect the prompt to enforce JSON-only output, but also harden parsing.
+
+    We use JSON mode (response_format) when enabled to reduce invalid JSON cases.
+    We still keep robust parsing as a fallback.
     """
-    response = client.responses.create(
-        model=settings.openai_model,
-        input=prompt,
-        # If your model + SDK supports it, this is even better:
-        # response_format={"type": "json_object"},
-    )
+    create_kwargs: Dict[str, Any] = {
+        "model": settings.openai_model,
+        "input": prompt,
+        "temperature": settings.temperature,
+    }
+
+    # Optional output cap to reduce truncation
+    if settings.max_output_tokens and settings.max_output_tokens > 0:
+        create_kwargs["max_output_tokens"] = settings.max_output_tokens
+
+    # JSON mode (best-effort; supported by many modern models)
+    if settings.use_json_mode and settings.json_mode_type.lower() == "json_object":
+        create_kwargs["response_format"] = {"type": "json_object"}
+
+    response = client.responses.create(**create_kwargs)
 
     text = _strip_code_fences(_extract_text_from_response(response))
     text = _extract_first_json_object(text)
@@ -181,7 +190,7 @@ def call_model(prompt: str) -> Dict[str, Any]:
     except json.JSONDecodeError:
         pass
 
-    # 2) Fallback parse allowing control chars in strings (fixes unescaped newlines sometimes)
+    # 2) Fallback parse allowing control chars in strings
     try:
         return json.loads(text, strict=False)
     except json.JSONDecodeError as e:
@@ -270,7 +279,7 @@ if __name__ == "__main__":
     parser.add_argument("--out", type=str, default=None, help="Optional output file path")
     parser.add_argument("--output_file", dest="out", help="Alias for --out")
 
-    # Child pipeline improvement: reuse an existing RAW JSON (so mongo/html doesn't re-call model)
+    # Reuse an existing RAW JSON (so mongo/html doesn't re-call model)
     parser.add_argument(
         "--input_raw_json",
         type=str,
@@ -278,7 +287,7 @@ if __name__ == "__main__":
         help="Path to an already-generated child raw JSON. If provided, skips model call and uses this for mongo/html.",
     )
 
-    # Landing inputs (CSV-driven) - keep as-is in your codebase
+    # Landing args (keeping placeholders; you can keep your existing landing flow)
     parser.add_argument("--search_volume_csv", type=str, default=None)
     parser.add_argument("--conversion_master_csv", type=str, default=None)
     parser.add_argument("--conversion_matrix_csv", dest="conversion_master_csv", help="Alias for --conversion_master_csv")
@@ -309,8 +318,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.type == "landing":
-        # Your landing flow can stay as-is; not rewriting it here for brevity
-        raise SystemExit("Landing flow omitted here; keep your existing landing implementation.")
+        raise SystemExit("Landing flow not shown here; keep your existing landing implementation.")
 
     # -------------------------
     # Child flow
@@ -347,7 +355,6 @@ if __name__ == "__main__":
     else:
         ai_output = generate_child_content(payload)
 
-        # Optional length validation for child pages
         if args.validate_lengths or args.strict_lengths:
             issues = validate_child_lengths(ai_output)
 
@@ -366,7 +373,6 @@ if __name__ == "__main__":
         write_or_print(ai_output.model_dump_json(indent=2, ensure_ascii=False, by_alias=True), args.out)
         raise SystemExit(0)
 
-    # build mongo doc for both mongo/html
     slug = f"{args.from_unit_code.lower().replace('_', '-')}-to-{args.to_unit_code.lower().replace('_', '-')}"
     url_path = f"/area-convertor/{slug}"
 
