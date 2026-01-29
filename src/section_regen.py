@@ -89,8 +89,12 @@ def build_regen_prompt(
         ),
         "faqs": (
             "Return JSON: {\"faqs\": [{\"question\":\"...\",\"answerHtml\":\"...\"}, ...]}. "
-            "MUST be exactly 10 FAQs. Each answerHtml MUST be 80–110 words (HTML). "
-            "Make questions sound like real users in India; keep them directional."
+            "MUST be exactly 10 FAQs. "
+            "Each answerHtml MUST be 75–105 words (HTML) and MUST include exactly TWO <p> paragraphs. "
+            "Do not use <ul> in FAQs. "
+            "Each answer must include: (1) a real-estate context line (listing/doc/loan/valuation), "
+            "(2) a directional conversion hint (from → to), and (3) a small practical note about rounding/units. "
+            "Use India-first wording. No filler, but long enough to meet word count."
         ),
         "quickConversionReference.rows": (
             "Return JSON: {\"rows\": [{\"from\": 10, \"to\": 107.639, \"commonUse\": \"...\"}, ...]}. "

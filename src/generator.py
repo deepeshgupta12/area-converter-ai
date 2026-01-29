@@ -1,7 +1,7 @@
 # src/generator.py
 import json
 from pathlib import Path
-from typing import Any, Dict, Literal, Optional, Tuple, List
+from typing import Any, Dict, Literal, Optional, List
 
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -44,7 +44,6 @@ def load_prompt(template_name: Literal["landing", "child"]) -> str:
 def render_child_prompt(template: str, child_input: ChildPageInput) -> str:
     text = template
 
-    # Required directional tokens
     text = text.replace("{{from_unit_code}}", child_input.from_unit_code)
     text = text.replace("{{from_unit_label}}", child_input.from_unit_label)
     text = text.replace("{{to_unit_code}}", child_input.to_unit_code)
@@ -69,16 +68,8 @@ def render_landing_prompt(
     landing_input: LandingPageInput,
     injected_context: Optional[Dict[str, Any]] = None,
 ) -> str:
-    """
-    Renders landing prompt by injecting CSV-derived landing context.
-    injected_context overrides landing_input.landing_context if provided.
-
-    NOTE: landing_prompt.txt must contain placeholder: {{landing_context_json}}
-    """
     ctx = injected_context if injected_context is not None else landing_input.landing_context
-
-    text = template
-    text = text.replace(
+    text = template.replace(
         "{{landing_context_json}}",
         json.dumps(ctx or {}, ensure_ascii=False, indent=2),
     )
@@ -89,9 +80,6 @@ def render_landing_prompt(
 # OpenAI call / JSON parsing
 # -------------------------
 def _extract_text_from_response(response: Any) -> str:
-    """
-    OpenAI Responses API can return different shapes. We try robust extraction.
-    """
     try:
         return response.output[0].content[0].text
     except Exception:
@@ -124,10 +112,6 @@ def _strip_code_fences(text: str) -> str:
 
 
 def _extract_first_json_object(text: str) -> str:
-    """
-    Defensive extraction: find first '{' and then balance braces until the matching '}'.
-    Helps when the model outputs leading/trailing junk.
-    """
     s = text.strip()
     start = s.find("{")
     if start == -1:
@@ -158,39 +142,53 @@ def _extract_first_json_object(text: str) -> str:
     return s[start:]
 
 
-def call_model(prompt: str) -> Dict[str, Any]:
+def _responses_create_compat(create_kwargs: Dict[str, Any]) -> Any:
     """
-    Calls OpenAI and returns parsed JSON dict.
+    Backward compatible wrapper:
+    - Some OpenAI SDKs reject response_format and/or max_output_tokens.
+    - We retry by removing unsupported keys.
+    """
+    try:
+        return client.responses.create(**create_kwargs)
+    except TypeError as e:
+        msg = str(e)
 
-    We use JSON mode (response_format) when enabled to reduce invalid JSON cases.
-    We still keep robust parsing as a fallback.
-    """
+        # Remove response_format if unsupported
+        if "response_format" in msg and "unexpected keyword argument" in msg:
+            create_kwargs.pop("response_format", None)
+
+        # Remove max_output_tokens if unsupported
+        if "max_output_tokens" in msg and "unexpected keyword argument" in msg:
+            create_kwargs.pop("max_output_tokens", None)
+
+        # Retry once after removing unsupported args
+        return client.responses.create(**create_kwargs)
+
+
+def call_model(prompt: str) -> Dict[str, Any]:
     create_kwargs: Dict[str, Any] = {
         "model": settings.openai_model,
         "input": prompt,
         "temperature": settings.temperature,
     }
 
-    # Optional output cap to reduce truncation
-    if settings.max_output_tokens and settings.max_output_tokens > 0:
+    if getattr(settings, "max_output_tokens", None):
         create_kwargs["max_output_tokens"] = settings.max_output_tokens
 
-    # JSON mode (best-effort; supported by many modern models)
-    if settings.use_json_mode and settings.json_mode_type.lower() == "json_object":
+    # JSON mode (if your SDK supports it; otherwise compat wrapper will drop it)
+    if getattr(settings, "use_json_mode", False) and getattr(settings, "json_mode_type", "json_object").lower() == "json_object":
         create_kwargs["response_format"] = {"type": "json_object"}
 
-    response = client.responses.create(**create_kwargs)
+    response = _responses_create_compat(create_kwargs)
 
     text = _strip_code_fences(_extract_text_from_response(response))
     text = _extract_first_json_object(text)
 
-    # 1) Normal strict parse
     try:
         return json.loads(text)
     except json.JSONDecodeError:
         pass
 
-    # 2) Fallback parse allowing control chars in strings
     try:
         return json.loads(text, strict=False)
     except json.JSONDecodeError as e:
@@ -205,11 +203,6 @@ def call_model(prompt: str) -> Dict[str, Any]:
 # HTML rendering
 # -------------------------
 def render_html(mode_type: Literal["landing", "child"], mongo_doc: Dict[str, Any]) -> str:
-    """
-    Renders HTML using Jinja2 templates. Expects:
-      - src/templates/landing.html.j2
-      - src/templates/child.html.j2
-    """
     try:
         from jinja2 import Environment, FileSystemLoader, select_autoescape
     except Exception:
@@ -238,9 +231,9 @@ def render_html(mode_type: Literal["landing", "child"], mongo_doc: Dict[str, Any
 # -------------------------
 # Generators
 # -------------------------
-def generate_landing_content(landing_input: LandingPageInput) -> LandingPageOutput:
+def generate_landing_content(landing_input: LandingPageInput, injected_context: Optional[Dict[str, Any]] = None) -> LandingPageOutput:
     template = load_prompt("landing")
-    prompt = render_landing_prompt(template, landing_input, injected_context=landing_input.landing_context)
+    prompt = render_landing_prompt(template, landing_input, injected_context=injected_context)
     raw = call_model(prompt)
     return LandingPageOutput(**raw)
 
@@ -279,15 +272,7 @@ if __name__ == "__main__":
     parser.add_argument("--out", type=str, default=None, help="Optional output file path")
     parser.add_argument("--output_file", dest="out", help="Alias for --out")
 
-    # Reuse an existing RAW JSON (so mongo/html doesn't re-call model)
-    parser.add_argument(
-        "--input_raw_json",
-        type=str,
-        default=None,
-        help="Path to an already-generated child raw JSON. If provided, skips model call and uses this for mongo/html.",
-    )
-
-    # Landing args (keeping placeholders; you can keep your existing landing flow)
+    # Landing inputs (CSV-driven) — keep your existing landing flow
     parser.add_argument("--search_volume_csv", type=str, default=None)
     parser.add_argument("--conversion_master_csv", type=str, default=None)
     parser.add_argument("--conversion_matrix_csv", dest="conversion_master_csv", help="Alias for --conversion_master_csv")
@@ -320,9 +305,7 @@ if __name__ == "__main__":
     if args.type == "landing":
         raise SystemExit("Landing flow not shown here; keep your existing landing implementation.")
 
-    # -------------------------
-    # Child flow
-    # -------------------------
+    # Child
     if not (args.from_unit_code and args.to_unit_code and args.from_unit_label and args.to_unit_label):
         raise SystemExit("For child type, you must provide from/to unit codes and labels.")
 
@@ -345,30 +328,20 @@ if __name__ == "__main__":
         ),
     }
 
-    # 1) Build / load ai_output
-    if args.input_raw_json:
-        raw_path = Path(args.input_raw_json)
-        if not raw_path.exists():
-            raise SystemExit(f"--input_raw_json not found: {raw_path}")
-        raw_obj = json.loads(raw_path.read_text(encoding="utf-8"))
-        ai_output = ChildPageOutput.model_validate(raw_obj)
-    else:
-        ai_output = generate_child_content(payload)
+    ai_output = generate_child_content(payload)
 
-        if args.validate_lengths or args.strict_lengths:
-            issues = validate_child_lengths(ai_output)
+    if args.validate_lengths or args.strict_lengths:
+        issues = validate_child_lengths(ai_output)
+        if issues and args.auto_regen_failed_sections:
+            ai_output, issues = regen_until_valid(call_model, payload, ai_output, max_rounds=args.regen_rounds)
 
-            if issues and args.auto_regen_failed_sections:
-                ai_output, issues = regen_until_valid(call_model, payload, ai_output, max_rounds=args.regen_rounds)
+        if issues:
+            msg = "\n".join(["Length validation issues:"] + issues)
+            if args.strict_lengths:
+                raise SystemExit(msg)
+            else:
+                print(msg)
 
-            if issues:
-                msg = "\n".join(["Length validation issues:"] + issues)
-                if args.strict_lengths:
-                    raise SystemExit(msg)
-                else:
-                    print(msg)
-
-    # 2) Output
     if args.mode == "raw":
         write_or_print(ai_output.model_dump_json(indent=2, ensure_ascii=False, by_alias=True), args.out)
         raise SystemExit(0)
