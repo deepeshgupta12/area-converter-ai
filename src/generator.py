@@ -61,7 +61,11 @@ def render_child_prompt(template: str, child_input: ChildPageInput) -> str:
     )
     text = text.replace("{{from_unit_region}}", child_input.from_unit_region or "Pan-India")
     text = text.replace("{{to_unit_region}}", child_input.to_unit_region or "Pan-India")
-    text = text.replace("{{city_name}}", child_input.city_name or "a major Indian city")
+
+    # IMPORTANT: child page content must NOT be city-localized.
+    # Always force a neutral Pan-India context.
+    text = text.replace("{{city_name}}", "Pan-India")
+
     text = text.replace("{{direction_note}}", child_input.direction_note or "")
 
     return text
@@ -119,22 +123,66 @@ def _extract_text_from_response(response: Any) -> str:
     raise ValueError("Could not extract text from OpenAI response.")
 
 
+def _escape_control_chars_inside_json_strings(s: str) -> str:
+    """
+    Fixes a common model failure: literal newlines inside JSON strings.
+    JSON does not allow raw newline characters inside quoted strings.
+    We convert them to \\n (only when inside a string).
+    """
+    out: List[str] = []
+    in_str = False
+    esc = False
+
+    for ch in s:
+        if in_str:
+            if esc:
+                out.append(ch)
+                esc = False
+                continue
+
+            if ch == "\\":
+                out.append(ch)
+                esc = True
+                continue
+
+            if ch == '"':
+                out.append(ch)
+                in_str = False
+                continue
+
+            if ch == "\n":
+                out.append("\\n")
+                continue
+            if ch == "\r":
+                out.append("\\r")
+                continue
+            if ch == "\t":
+                out.append("\\t")
+                continue
+
+            out.append(ch)
+        else:
+            if ch == '"':
+                out.append(ch)
+                in_str = True
+            else:
+                out.append(ch)
+
+    return "".join(out)
+
+
 def call_model(prompt: str) -> Dict[str, Any]:
     """
     Calls OpenAI and returns parsed JSON dict.
     Expect the prompt to enforce JSON-only output.
 
-    IMPORTANT: Do NOT pass 'response_format' here.
-    Your installed OpenAI SDK / Responses API wrapper does not accept it
-    (as you saw: got unexpected keyword argument 'response_format').
+    IMPORTANT: Do NOT pass 'response_format' here (your SDK errors on it).
     """
     create_kwargs: Dict[str, Any] = {
         "model": settings.openai_model,
         "input": prompt,
     }
 
-    # Temperature is supported in many SDK variants. If it errors in your env,
-    # remove this field.
     if getattr(settings, "temperature", None) is not None:
         create_kwargs["temperature"] = settings.temperature
 
@@ -145,6 +193,9 @@ def call_model(prompt: str) -> Dict[str, Any]:
     if text.startswith("```"):
         text = text.strip().strip("`").strip()
         text = text.replace("```json", "").replace("```", "").strip()
+
+    # Repair common JSON issues from LLM output
+    text = _escape_control_chars_inside_json_strings(text)
 
     try:
         return json.loads(text)
@@ -202,9 +253,6 @@ def build_landing_context_from_csvs(search_volume_csv: Path, conversion_master_c
     - Top conversion intents (from search-volume sheet)
     - Unit catalog A–Z (from conversion master)
     - Guardrails + selection rules
-
-    IMPORTANT: Do not compute/claim numeric factors here.
-    Numeric factors used in content must be sourced from conversion master via code (or passed explicitly).
     """
     try:
         import pandas as pd
@@ -219,7 +267,6 @@ def build_landing_context_from_csvs(search_volume_csv: Path, conversion_master_c
     sv = pd.read_csv(search_volume_csv, encoding="utf-8-sig")
     cm = pd.read_csv(conversion_master_csv, encoding="utf-8-sig")
 
-    # Normalize headers (fixes BOM/whitespace)
     sv.columns = [str(c).strip() for c in sv.columns]
     cm.columns = [str(c).strip() for c in cm.columns]
 
@@ -253,7 +300,6 @@ def build_landing_context_from_csvs(search_volume_csv: Path, conversion_master_c
     top10 = intents[:10]
     top50 = intents[:50]
 
-    # Unit catalog A–Z from conversion master
     if len(cm.columns) < 2:
         raise SystemExit("conversion_master_csv looks invalid: expected a matrix with headers + rows (>= 2 columns).")
 
@@ -278,10 +324,7 @@ def build_landing_context_from_csvs(search_volume_csv: Path, conversion_master_c
             "search_volume_csv": str(search_volume_csv),
             "conversion_master_csv": str(conversion_master_csv),
         },
-        "top_intents": {
-            "top10": top10,
-            "top50": top50,
-        },
+        "top_intents": {"top10": top10, "top50": top50},
         "units_catalog_az": az_compact,
         "rules": {
             "india_first": True,
@@ -371,16 +414,14 @@ if __name__ == "__main__":
     parser.add_argument("--type", choices=["landing", "child"], required=True)
     parser.add_argument("--mode", choices=["raw", "mongo", "html"], default="raw")
     parser.add_argument("--out", type=str, default=None, help="Optional output file path")
-    # Back-compat alias
     parser.add_argument("--output_file", dest="out", help="Alias for --out")
 
     # Landing inputs (CSV-driven)
     parser.add_argument("--search_volume_csv", type=str, default=None)
     parser.add_argument("--conversion_master_csv", type=str, default=None)
-    # Back-compat alias
     parser.add_argument("--conversion_matrix_csv", dest="conversion_master_csv", help="Alias for --conversion_master_csv")
 
-    # Optional landing metadata (cleanest structure)
+    # Optional landing metadata
     parser.add_argument("--landing_slug", type=str, default="area-convertor")
     parser.add_argument("--landing_locale", type=str, default="en-IN")
     parser.add_argument("--landing_site_code", type=str, default="sqy-india-web")
@@ -396,7 +437,6 @@ if __name__ == "__main__":
     parser.add_argument("--factor_to_unit", type=float)
     parser.add_argument("--from_unit_region", type=str)
     parser.add_argument("--to_unit_region", type=str)
-    parser.add_argument("--city_name", type=str)
 
     # NEW: build mongo/html from existing RAW without any model call
     parser.add_argument(
@@ -464,7 +504,7 @@ if __name__ == "__main__":
             raise SystemExit("For child type, you must provide from/to unit codes and labels.")
 
         # ----------------------------------------------------------
-        # FIX: Build mongo/html from existing RAW JSON (no model call)
+        # Build mongo/html from existing RAW JSON (no model call)
         # ----------------------------------------------------------
         if args.input_raw_json:
             raw_path = Path(args.input_raw_json)
@@ -490,7 +530,6 @@ if __name__ == "__main__":
                     else:
                         print(msg)
 
-            # Build mongo/html from this parsed output
             slug = f"{args.from_unit_code.lower().replace('_', '-')}-to-{args.to_unit_code.lower().replace('_', '-')}"
             url_path = f"/area-convertor/{slug}"
 
@@ -511,7 +550,6 @@ if __name__ == "__main__":
                 html = render_html("child", mongo_doc)
                 write_or_print(html, args.out)
             else:
-                # raw mode + input file: re-print normalized raw
                 write_or_print(ai_output.model_dump_json(indent=2, ensure_ascii=False, by_alias=True), args.out)
 
             raise SystemExit(0)
@@ -529,18 +567,20 @@ if __name__ == "__main__":
             "to_unit_symbol": args.to_unit_symbol,
             "from_unit_region": args.from_unit_region,
             "to_unit_region": args.to_unit_region,
-            "city_name": args.city_name,
+
+            # IMPORTANT: Do not localize content by city for child pages.
+            "city_name": "Pan-India",
+
             "direction_note": (
                 f"This page is specifically about converting FROM {args.from_unit_label} "
                 f"TO {args.to_unit_label}. Make the content clearly directional and do not "
-                f"write generic text that would equally fit the reverse ({args.to_unit_label} "
-                f"to {args.from_unit_label})."
+                f"write generic text that would equally fit the reverse. "
+                f"Also: do NOT mention any specific city (Mumbai/Delhi/etc). Keep the page Pan-India."
             ),
         }
 
         ai_output = generate_child_content(payload)
 
-        # Optional length validation for child pages
         if args.validate_lengths or args.strict_lengths:
             issues = validate_child_lengths(ai_output)
             if issues and args.auto_regen_failed_sections:
@@ -557,7 +597,6 @@ if __name__ == "__main__":
             write_or_print(ai_output.model_dump_json(indent=2, ensure_ascii=False, by_alias=True), args.out)
             raise SystemExit(0)
 
-        # build mongo doc for both mongo/html
         slug = f"{args.from_unit_code.lower().replace('_', '-')}-to-{args.to_unit_code.lower().replace('_', '-')}"
         url_path = f"/area-convertor/{slug}"
 
