@@ -317,5 +317,4 @@ git push
 
 ## License
 
-This project is intended as internal tooling for content generation.
-Consult your organization’s policies before open-sourcing or reusing it in other contexts.
+MIT © 2025 Deepesh Kumar Gupta. See [LICENSE](LICENSE) for details.
